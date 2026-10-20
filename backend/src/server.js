@@ -5,6 +5,8 @@ import { ZodError } from "zod";
 
 import { env } from "./config/env.js";
 import { sequelize } from "./config/database.js";
+import routes from "./routes/index.js";
+import { errorHandler } from "./middleware/errorMiddleware.js";
 
 const app = express();
 
@@ -19,7 +21,6 @@ app.use(
   }),
 );
 
-// ===== Parsing =====
 app.use(express.json({ limit: "2mb" }));
 app.use(express.urlencoded({ extended: true, limit: "2mb" }));
 
@@ -43,6 +44,8 @@ app.get("/api/health", (_req, res) => {
     message: "API en ligne",
   });
 });
+
+app.use("/api", routes);
 
 app.use((_req, res) => {
   res.status(404).json({
@@ -97,6 +100,8 @@ app.use((err, _req, res, _next) => {
     errors: [],
   });
 });
+
+app.use(errorHandler);
 
 async function start() {
   try {
