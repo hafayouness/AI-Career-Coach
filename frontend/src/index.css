@@ -1,0 +1,59 @@
+:root {
+  /* Fonds */
+  --bg: #fafaf9;
+  --surface: #ffffff;
+  --surface-2: #f5f5f4;
+  --border: #e7e5e4;
+  --border-strong: #d6d3d1;
+
+  /* Texte */
+  --text: #0a0a0a;
+  --text-muted: #57534e;
+  --text-light: #a8a29e;
+
+  /* Primaire (noir) */
+  --primary: #0a0a0a;
+  --primary-hover: #262626;
+  --primary-soft: #f5f5f4;
+
+  /* Accent (lime) */
+  --accent: #84cc16;
+  --accent-hover: #65a30d;
+  --accent-soft: #ecfccb;
+  --accent-glow: rgba(132, 204, 22, 0.25);
+
+  /* Statuts */
+  --success: #16a34a;
+  --success-soft: #dcfce7;
+  --danger: #dc2626;
+  --danger-soft: #fee2e2;
+  --warning: #d97706;
+  --warning-soft: #fef3c7;
+
+  /* Rayons */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+
+  /* Ombres */
+  --shadow-sm: 0 1px 2px rgba(10, 10, 10, 0.04);
+  --shadow-md: 0 4px 16px rgba(10, 10, 10, 0.06);
+  --shadow-lg: 0 16px 40px rgba(10, 10, 10, 0.08);
+
+  /* Typo */
+  --font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --font-display: "Instrument Serif", Georgia, serif;
+
+  /* Espacement */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
+
+  /* Transitions */
+  --t-fast: 0.15s ease;
+  --t-base: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
