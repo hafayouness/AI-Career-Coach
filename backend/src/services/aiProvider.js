@@ -1,26 +1,34 @@
 import { getAIClient, aiConfig } from "../config/ai.js";
 
+const cleanJson = (text) =>
+  text
+    .trim()
+    .replace(/^```(?:json)?\s*/i, "")
+    .replace(/\s*```$/, "")
+    .trim();
+
 export const aiProvider = {
   async chat({ system, user, json = false, temperature = 0.3 }) {
-    const client = getAIClient();
+    const ai = getAIClient();
 
     try {
-      const response = await client.chat.completions.create({
+      const response = await ai.models.generateContent({
         model: aiConfig.model,
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: user },
-        ],
-        temperature,
-        ...(json ? { response_format: { type: "json_object" } } : {}),
+        contents: user,
+        config: {
+          systemInstruction: system,
+          temperature,
+          ...(json ? { responseMimeType: "application/json" } : {}),
+        },
       });
 
-      const content = response.choices?.[0]?.message?.content || "";
+      const content = response.text || "";
 
       if (json) {
         try {
-          return JSON.parse(content);
+          return JSON.parse(cleanJson(content));
         } catch {
+          console.error("JSON IA invalide :", content.slice(0, 300));
           const e = new Error("Réponse IA non conforme (JSON invalide)");
           e.status = 502;
           throw e;
@@ -28,10 +36,16 @@ export const aiProvider = {
       }
       return content;
     } catch (err) {
-      if (err.status) throw err;
-      console.error("Erreur IA:", err.message);
-      const e = new Error("Fournisseur IA indisponible");
-      e.status = 503;
+      if (err.status === 502) throw err;
+
+      console.error("Erreur IA:", err.status, err.message);
+
+      const e = new Error(
+        err.status === 429
+          ? "Quota IA dépassé, réessayez dans quelques instants"
+          : "Fournisseur IA indisponible",
+      );
+      e.status = err.status === 429 ? 429 : 503;
       throw e;
     }
   },

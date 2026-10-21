@@ -1,4 +1,4 @@
-import OpenAI from "openai";
+import { GoogleGenAI } from "@google/genai";
 import { env } from "./env.js";
 
 let client = null;
@@ -12,12 +12,12 @@ export const getAIClient = () => {
     throw e;
   }
   if (!client) {
-    client = new OpenAI({ apiKey: env.aiApiKey });
+    client = new GoogleGenAI({ apiKey: env.aiApiKey });
   }
   return client;
 };
 
 export const aiConfig = {
   provider: env.aiProvider,
-  model: env.aiModel,
+  model: env.aiModel || "gemini-flash-latest",
 };
