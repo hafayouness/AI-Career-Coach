@@ -20,4 +20,5 @@ export const getAIClient = () => {
 export const aiConfig = {
   provider: env.aiProvider,
   model: env.aiModel || "gemini-flash-latest",
+  fallbackModel: env.aiFallbackModel || "gemini-flash-lite-latest",
 };

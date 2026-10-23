@@ -34,3 +34,26 @@ export const uploadCV = multer({
     cb(null, true);
   },
 }).single("file");
+
+const CV_MIMES = [
+  "application/pdf",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+];
+const CV_EXTS = [".pdf", ".docx"];
+
+const IMG_MIMES = ["image/jpeg", "image/png", "image/webp"];
+const IMG_EXTS = [".jpg", ".jpeg", ".png", ".webp"];
+
+export const uploadOfferImage = multer({
+  storage,
+  limits: { fileSize: env.maxFileSizeMb * 1024 * 1024 },
+  fileFilter: (_req, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase();
+    if (!IMG_MIMES.includes(file.mimetype) || !IMG_EXTS.includes(ext)) {
+      const e = new Error("Format non autorisé (JPG, PNG ou WEBP uniquement)");
+      e.status = 400;
+      return cb(e);
+    }
+    cb(null, true);
+  },
+}).single("file");

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { jobOfferService } from "../services/jobOfferService.js";
-import { ok, created } from "../utils/response.js";
+import { ok, created, fail } from "../utils/response.js";
 
 const createSchema = z.object({
   title: z.string().min(2),
@@ -70,6 +70,21 @@ export const jobOfferController = {
     try {
       await jobOfferService.remove(req.user.id, Number(req.params.id));
       return ok(res, {}, "Offre supprimée");
+    } catch (e) {
+      next(e);
+    }
+  },
+
+  async extractFromImage(req, res, next) {
+    try {
+      if (!req.file) {
+        return fail(res, 400, "Aucune image fournie");
+      }
+      const offer = await jobOfferService.createFromImage(
+        req.user.id,
+        req.file,
+      );
+      return created(res, offer, "Offre importée depuis l'image");
     } catch (e) {
       next(e);
     }
