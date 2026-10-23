@@ -1,5 +1,6 @@
 import { JobOffer } from "../models/index.js";
 import { jobOfferParsingService } from "./jobOfferParsingService.js";
+import { ocrService } from "./ocrService.js";
 
 export const jobOfferService = {
   async create(userId, data) {
@@ -13,7 +14,6 @@ export const jobOfferService = {
       parsingStatus: "pending",
     });
 
-    // Parsing IA en arrière-plan
     this.parseInBackground(offer.id, data.description);
 
     return offer;
@@ -93,5 +93,27 @@ export const jobOfferService = {
   async remove(userId, id) {
     const offer = await this.get(userId, id);
     await offer.destroy();
+  },
+  async createFromImage(userId, file) {
+    // 1. OCR
+    const rawText = await ocrService.extractTextFromImage(file.path);
+
+    // 2. Extraction IA
+    const extracted =
+      await jobOfferExtractionService.extractFromRawText(rawText);
+
+    // 3. Création en DB (status completed car déjà parsé)
+    const offer = await JobOffer.create({
+      userId,
+      title: extracted.title,
+      company: extracted.company,
+      location: extracted.location,
+      description: extracted.description,
+      sourceUrl: null,
+      requirements: extracted.requirements,
+      parsingStatus: "completed",
+    });
+
+    return offer;
   },
 };
