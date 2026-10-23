@@ -9,8 +9,11 @@ JobAnalysis.init(
     userId: { type: DataTypes.INTEGER, allowNull: false },
     cvId: { type: DataTypes.INTEGER, allowNull: false },
     jobOfferId: { type: DataTypes.INTEGER, allowNull: false },
+
     matchingScore: { type: DataTypes.INTEGER, allowNull: false },
+
     matchingDetails: { type: DataTypes.JSONB, allowNull: false },
+
     recommendations: { type: DataTypes.JSONB, allowNull: true },
   },
   {
@@ -21,6 +24,8 @@ JobAnalysis.init(
       { fields: ["userId"] },
       { fields: ["cvId"] },
       { fields: ["jobOfferId"] },
+
+      { unique: true, fields: ["cvId", "jobOfferId"], name: "uniq_cv_offer" },
     ],
   },
 );
