@@ -7,6 +7,7 @@ import {
 } from "lucide-react";
 import { Button } from "../components/ui";
 import { useAuthUser } from "../store/authStore";
+import { useNavigate } from "react-router-dom";
 
 const stats = [
   { label: "CV importés", value: 0, icon: FileText, ai: false },
@@ -17,7 +18,7 @@ const stats = [
 
 export const Dashboard = () => {
   const user = useAuthUser();
-
+  const navigate = useNavigate();
   return (
     <>
       <div style={{ marginBottom: 24 }}>
@@ -57,7 +58,9 @@ export const Dashboard = () => {
             prochain entretien.
           </p>
           <div style={{ display: "flex", gap: 12, flexWrap: "wrap" }}>
-            <Button variant="primary">Importer mon CV</Button>
+            <Button variant="primary" onClick={() => navigate("/cv")}>
+              Importer mon CV
+            </Button>
             <Button variant="ai">Générer mon pitch</Button>
           </div>
         </div>

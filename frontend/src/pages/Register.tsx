@@ -17,17 +17,14 @@ export const Register = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
+
   const [localError, setLocalError] = useState("");
   const register = useRegister();
 
   const onSubmit = (e: FormEvent) => {
     e.preventDefault();
     setLocalError("");
-    if (password !== confirm) {
-      setLocalError("Les mots de passe ne correspondent pas");
-      return;
-    }
+
     register.mutate({ name, email, password });
   };
 
