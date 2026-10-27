@@ -149,3 +149,50 @@ export interface JobAnalysis {
     requirements?: JobOfferRequirements | null;
   };
 }
+
+export interface CVVersionContent {
+  header: {
+    name: string;
+    email: string | null;
+    phone: string | null;
+    summary: string;
+  };
+  skills: string[];
+  experiences: {
+    title: string;
+    company: string | null;
+    startDate: string | null;
+    endDate: string | null;
+    description: string;
+  }[];
+  education: {
+    degree: string;
+    institution: string | null;
+    year: string | null;
+  }[];
+  languages: { language: string; level: string | null }[];
+  certifications: string[];
+  projects: { name: string; description: string }[];
+}
+
+export interface ChangeSummary {
+  reorganized: string[];
+  reformulated: string[];
+  highlighted: string[];
+  flaggedClaims: string[];
+  antiInventionIssues: { type: string; value: string; reason: string }[];
+}
+
+export interface CVVersion {
+  id: number;
+  cvId: number;
+  jobOfferId: number | null;
+  versionNumber: number;
+  content: CVVersionContent;
+  changeSummary: ChangeSummary | null;
+  validated: boolean;
+  validatedAt: string | null;
+  createdAt: string;
+  cv?: { id: number; originalFileName: string; parsedData: ParsedCV | null };
+  jobOffer?: { id: number; title: string; company: string | null };
+}
