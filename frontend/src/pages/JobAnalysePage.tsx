@@ -9,7 +9,7 @@ import { AnalysisLauncher } from "../components/analyses/AnalysisLauncher";
 import { AnalysisLoader } from "../components/analyses/AnalysisLoader";
 import { AnalysisCard } from "../components/analyses/AnalysisCard";
 import { AnalysisDetail } from "../components/analyses/AnalysisDetail";
-import { Spinner, Alert, Button } from "../components/ui";
+import { Spinner, Alert, Button, ConfirmDialog } from "../components/ui";
 import { extractError } from "../services/api";
 
 export const JobAnalysesPage = () => {
@@ -20,6 +20,7 @@ export const JobAnalysesPage = () => {
   const [showLauncher, setShowLauncher] = useState(false);
   const [openId, setOpenId] = useState<number | null>(null);
   const [error, setError] = useState("");
+  const [toDelete, setToDelete] = useState<number | null>(null);
 
   const handleLaunch = (cvId: number, jobOfferId: number) => {
     setShowLauncher(false);
@@ -29,17 +30,18 @@ export const JobAnalysesPage = () => {
       { cvId, jobOfferId },
       {
         onSuccess: (analysis) => {
-          setOpenId(analysis.id); // ✅ ouvre le détail
+          setOpenId(analysis.id);
         },
         onError: (err) => {
-          setError(extractError(err)); // ✅ affiche l'erreur
+          setError(extractError(err));
         },
       },
     );
   };
 
-  const handleDelete = (id: number) => {
-    if (confirm("Supprimer cette analyse ?")) deleteAnalysis.mutate(id);
+  const confirmDelete = () => {
+    if (toDelete === null) return;
+    deleteAnalysis.mutate(toDelete, { onSuccess: () => setToDelete(null) });
   };
 
   return (
@@ -93,7 +95,7 @@ export const JobAnalysesPage = () => {
               onClick={() => setOpenId(a.id)}
               onDelete={(e) => {
                 e.stopPropagation();
-                handleDelete(a.id);
+                setToDelete(a.id);
               }}
             />
           ))}
@@ -116,6 +118,17 @@ export const JobAnalysesPage = () => {
       {openId !== null && (
         <AnalysisDetail analysisId={openId} onClose={() => setOpenId(null)} />
       )}
+      <ConfirmDialog
+        open={toDelete !== null}
+        title="Supprimer cette analyse ?"
+        message="Cette analyse sera définitivement supprimée. Vous pourrez la relancer à tout moment."
+        confirmLabel="Supprimer"
+        cancelLabel="Annuler"
+        variant="danger"
+        loading={deleteAnalysis.isPending}
+        onConfirm={confirmDelete}
+        onClose={() => setToDelete(null)}
+      />
     </>
   );
 };

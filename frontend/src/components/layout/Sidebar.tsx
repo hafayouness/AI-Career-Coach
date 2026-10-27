@@ -8,12 +8,14 @@ import {
   Settings,
 } from "lucide-react";
 import { Target } from "lucide-react";
+import { FileCheck } from "lucide-react";
 
 const links = [
   { to: "/dashboard", label: "Tableau de bord", icon: LayoutDashboard },
   { to: "/cv", label: "Mon CV", icon: FileText },
   { to: "/offers", label: "Offres", icon: Briefcase },
   { to: "/analyses", label: "Analyses", icon: Target },
+  { to: "/cv-versions", label: "CV adaptés", icon: FileCheck },
   { to: "/interview", label: "Entretien", icon: MessageSquare },
   { to: "/applications", label: "Candidatures", icon: Send },
   { to: "/settings", label: "Paramètres", icon: Settings },

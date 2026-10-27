@@ -9,6 +9,7 @@ import { useAuthStore } from "./store/authStore";
 import { CVPage } from "./pages/CVPage";
 import { JobOffersPage } from "./pages/JobOffersPage";
 import { JobAnalysesPage } from "./pages/JobAnalysePage";
+import { CVVersionsPage } from "./pages/CVVersionsPage";
 
 const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   const token = useAuthStore((s) => s.token);
@@ -47,6 +48,7 @@ export const App = () => (
         <Route path="/cv" element={<CVPage />} />
         <Route path="/offers" element={<JobOffersPage />} />
         <Route path="/analyses" element={<JobAnalysesPage />} />
+        <Route path="/cv-versions" element={<CVVersionsPage />} />
       </Route>
 
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
