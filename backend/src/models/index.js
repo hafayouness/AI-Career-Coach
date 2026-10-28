@@ -4,6 +4,7 @@ import { CV } from "./CV.js";
 import { JobOffer } from "./JobOffer.js";
 import { JobAnalysis } from "./JobAnalysis.js";
 import { CVVersion } from "./CvVersion.js";
+import { Presentation } from "./Presentation.js";
 
 User.hasMany(CV, { foreignKey: "userId", as: "cvs", onDelete: "CASCADE" });
 CV.belongsTo(User, { foreignKey: "userId", as: "user" });
@@ -50,5 +51,33 @@ JobOffer.hasMany(JobAnalysis, {
 });
 JobAnalysis.belongsTo(JobOffer, { foreignKey: "jobOfferId", as: "jobOffer" });
 
-export const db = { sequelize, User, CV, JobOffer, JobAnalysis, CVVersion };
-export { User, CV, JobOffer, JobAnalysis, CVVersion };
+User.hasMany(Presentation, {
+  foreignKey: "userId",
+  as: "presentations",
+  onDelete: "CASCADE",
+});
+Presentation.belongsTo(User, { foreignKey: "userId", as: "user" });
+
+CV.hasMany(Presentation, {
+  foreignKey: "cvId",
+  as: "presentations",
+  onDelete: "SET NULL",
+});
+Presentation.belongsTo(CV, { foreignKey: "cvId", as: "cv" });
+
+JobOffer.hasMany(Presentation, {
+  foreignKey: "jobOfferId",
+  as: "presentations",
+  onDelete: "SET NULL",
+});
+Presentation.belongsTo(JobOffer, { foreignKey: "jobOfferId", as: "jobOffer" });
+export const db = {
+  sequelize,
+  User,
+  CV,
+  JobOffer,
+  JobAnalysis,
+  CVVersion,
+  Presentation,
+};
+export { User, CV, JobOffer, JobAnalysis, CVVersion, Presentation };
