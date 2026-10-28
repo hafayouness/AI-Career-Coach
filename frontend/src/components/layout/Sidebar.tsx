@@ -6,6 +6,7 @@ import {
   MessageSquare,
   Send,
   Settings,
+  Mic,
 } from "lucide-react";
 import { Target } from "lucide-react";
 import { FileCheck } from "lucide-react";
@@ -16,6 +17,7 @@ const links = [
   { to: "/offers", label: "Offres", icon: Briefcase },
   { to: "/analyses", label: "Analyses", icon: Target },
   { to: "/cv-versions", label: "CV adaptés", icon: FileCheck },
+  { to: "/presentations", label: "Présentations", icon: Mic },
   { to: "/interview", label: "Entretien", icon: MessageSquare },
   { to: "/applications", label: "Candidatures", icon: Send },
   { to: "/settings", label: "Paramètres", icon: Settings },
