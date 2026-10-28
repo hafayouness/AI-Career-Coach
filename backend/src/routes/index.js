@@ -4,6 +4,7 @@ import RouteCv from "./RouteCv.js";
 import jobOfferRoutes from "./jobOfferRoutes.js";
 import jobAnalysisRoutes from "./jobAnalysisRoutes.js";
 import cvVersionRoutes from "./cvVersionRoutes.js";
+import presentationRoutes from "./presentationRoutes.js";
 
 const router = Router();
 
@@ -12,5 +13,6 @@ router.use("/cvs", RouteCv);
 router.use("/job-offers", jobOfferRoutes);
 router.use("/job-analyses", jobAnalysisRoutes);
 router.use("/cv-versions", cvVersionRoutes);
+router.use("/presentations", presentationRoutes);
 
 export default router;

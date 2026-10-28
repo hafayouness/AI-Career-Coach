@@ -1,9 +1,38 @@
+/**
+ * Vérifie que le contenu généré ne contient AUCUNE affirmation
+ * absente du CV original.
+ *
+ * Adapté à la nouvelle structure :
+ *   skills: { langages: [], frameworks: [], outils: [], methodologies: [] }
+ *   experiences: [{ title_and_company, dates, context, missions, result }]
+ *   projects: [{ name, dates, missions, result }]
+ *   education: [{ title, dates, details }]
+ *   languages: string
+ */
 export const antiInventionService = {
   check(generated, original) {
     const issues = [];
 
-    const originalSkills = (original.skills || []).map((s) => s.toLowerCase());
-    for (const s of generated.skills || []) {
+    if (!original) return { valid: true, issues: [] };
+
+    /* ---- SKILLS (objet avec sous-catégories) ---- */
+    const originalSkills = [
+      ...(original.skills?.langages || []),
+      ...(original.skills?.frameworks || []),
+      ...(original.skills?.outils || []),
+      ...(original.skills?.methodologies || []),
+      // ancien format (si jamais)
+      ...(Array.isArray(original.skills) ? original.skills : []),
+    ].map((s) => String(s).toLowerCase());
+
+    const generatedSkills = [
+      ...(generated.skills?.langages || []),
+      ...(generated.skills?.frameworks || []),
+      ...(generated.skills?.outils || []),
+      ...(generated.skills?.methodologies || []),
+    ];
+
+    for (const s of generatedSkills) {
       if (!this.fuzzyMatch(s, originalSkills)) {
         issues.push({
           type: "skill",
@@ -13,54 +42,49 @@ export const antiInventionService = {
       }
     }
 
-    const originalExpTitles = (original.experiences || []).map((e) =>
-      (e.title || "").toLowerCase(),
+    /* ---- EXPÉRIENCES ---- */
+    const originalExps = (original.experiences || []).map((e) =>
+      String(e.title || e.title_and_company || "").toLowerCase(),
     );
+
     for (const e of generated.experiences || []) {
-      if (!this.fuzzyMatch(e.title, originalExpTitles)) {
+      const title = e.title_and_company || e.title || "";
+      if (title && !this.fuzzyMatch(title, originalExps)) {
         issues.push({
           type: "experience",
-          value: e.title,
+          value: title,
           reason: "Expérience non trouvée dans le CV original",
         });
       }
     }
 
-    const originalDegrees = (original.education || []).map((e) =>
-      (e.degree || "").toLowerCase(),
+    /* ---- PROJETS ---- */
+    const originalProjects = (original.projects || []).map((p) =>
+      String(p.name || "").toLowerCase(),
     );
+
+    for (const p of generated.projects || []) {
+      if (p.name && !this.fuzzyMatch(p.name, originalProjects)) {
+        issues.push({
+          type: "project",
+          value: p.name,
+          reason: "Projet non trouvé dans le CV original",
+        });
+      }
+    }
+
+    /* ---- FORMATIONS ---- */
+    const originalEdu = (original.education || []).map((e) =>
+      String(e.degree || e.title || "").toLowerCase(),
+    );
+
     for (const e of generated.education || []) {
-      if (!this.fuzzyMatch(e.degree, originalDegrees)) {
+      const title = e.title || e.degree || "";
+      if (title && !this.fuzzyMatch(title, originalEdu)) {
         issues.push({
           type: "education",
-          value: e.degree,
-          reason: "Diplôme absent du CV original",
-        });
-      }
-    }
-
-    const originalLangs = (original.languages || []).map((l) =>
-      (l.language || "").toLowerCase(),
-    );
-    for (const l of generated.languages || []) {
-      if (!this.fuzzyMatch(l.language, originalLangs)) {
-        issues.push({
-          type: "language",
-          value: l.language,
-          reason: "Langue absente du CV original",
-        });
-      }
-    }
-
-    const originalCerts = (original.certifications || []).map((c) =>
-      c.toLowerCase(),
-    );
-    for (const c of generated.certifications || []) {
-      if (!this.fuzzyMatch(c, originalCerts)) {
-        issues.push({
-          type: "certification",
-          value: c,
-          reason: "Certification absente du CV original",
+          value: title,
+          reason: "Formation absente du CV original",
         });
       }
     }
@@ -71,11 +95,15 @@ export const antiInventionService = {
     };
   },
 
+  /**
+   * Comparaison fuzzy simple : inclusion de mots.
+   */
   fuzzyMatch(value, list) {
     if (!value) return false;
-    const v = value.toLowerCase().trim();
+    const v = String(value).toLowerCase().trim();
+    if (!v) return false;
     return list.some((item) => {
-      const i = item.toLowerCase().trim();
+      const i = String(item).toLowerCase().trim();
       if (!i) return false;
       return i === v || i.includes(v) || v.includes(i);
     });
