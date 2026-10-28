@@ -196,3 +196,16 @@ export interface CVVersion {
   cv?: { id: number; originalFileName: string; parsedData: ParsedCV | null };
   jobOffer?: { id: number; title: string; company: string | null };
 }
+
+export interface Presentation {
+  id: number;
+  userId: number;
+  cvId: number | null;
+  jobOfferId: number | null;
+  language: "fr" | "en" | "ar";
+  type: string;
+  content: string;
+  createdAt: string;
+  cv?: { id: number; originalFileName: string };
+  jobOffer?: { id: number; title: string; company: string | null };
+}

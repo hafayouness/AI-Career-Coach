@@ -61,7 +61,9 @@ export const Dashboard = () => {
             <Button variant="primary" onClick={() => navigate("/cv")}>
               Importer mon CV
             </Button>
-            <Button variant="ai">Générer mon pitch</Button>
+            <Button variant="ai" onClick={() => navigate("/presentations")}>
+              Générer mon speech
+            </Button>
           </div>
         </div>
 
