@@ -3,9 +3,11 @@ import { User } from "./User.js";
 import { CV } from "./CV.js";
 import { JobOffer } from "./JobOffer.js";
 import { JobAnalysis } from "./JobAnalysis.js";
-import { CVVersion } from "./CvVersion.js";
+import { CVVersion } from "./CVVersion.js";
 import { Presentation } from "./Presentation.js";
+
 import { InterviewQuestion } from "./InterviewQuestion.js";
+import { InterviewSession } from "./InterviewSession.js";
 
 User.hasMany(CV, { foreignKey: "userId", as: "cvs", onDelete: "CASCADE" });
 CV.belongsTo(User, { foreignKey: "userId", as: "user" });
@@ -23,12 +25,28 @@ User.hasMany(JobAnalysis, {
   onDelete: "CASCADE",
 });
 JobAnalysis.belongsTo(User, { foreignKey: "userId", as: "user" });
+
+User.hasMany(Presentation, {
+  foreignKey: "userId",
+  as: "presentations",
+  onDelete: "CASCADE",
+});
+Presentation.belongsTo(User, { foreignKey: "userId", as: "user" });
+
 User.hasMany(InterviewQuestion, {
   foreignKey: "userId",
   as: "questions",
   onDelete: "CASCADE",
 });
 InterviewQuestion.belongsTo(User, { foreignKey: "userId", as: "user" });
+
+User.hasMany(InterviewSession, {
+  foreignKey: "userId",
+  as: "sessions",
+  onDelete: "CASCADE",
+});
+InterviewSession.belongsTo(User, { foreignKey: "userId", as: "user" });
+
 CV.hasMany(CVVersion, {
   foreignKey: "cvId",
   as: "versions",
@@ -42,12 +60,34 @@ CV.hasMany(JobAnalysis, {
   onDelete: "CASCADE",
 });
 JobAnalysis.belongsTo(CV, { foreignKey: "cvId", as: "cv" });
+
+CV.hasMany(Presentation, {
+  foreignKey: "cvId",
+  as: "presentations",
+  onDelete: "SET NULL",
+});
+Presentation.belongsTo(CV, { foreignKey: "cvId", as: "cv" });
+
 CV.hasMany(InterviewQuestion, {
   foreignKey: "cvId",
   as: "questions",
   onDelete: "SET NULL",
 });
 InterviewQuestion.belongsTo(CV, { foreignKey: "cvId", as: "cv" });
+
+CV.hasMany(InterviewSession, {
+  foreignKey: "cvId",
+  as: "sessions",
+  onDelete: "SET NULL",
+});
+InterviewSession.belongsTo(CV, { foreignKey: "cvId", as: "cv" });
+
+JobOffer.hasMany(JobAnalysis, {
+  foreignKey: "jobOfferId",
+  as: "analyses",
+  onDelete: "CASCADE",
+});
+JobAnalysis.belongsTo(JobOffer, { foreignKey: "jobOfferId", as: "jobOffer" });
 
 JobOffer.hasMany(CVVersion, {
   foreignKey: "jobOfferId",
@@ -56,12 +96,13 @@ JobOffer.hasMany(CVVersion, {
 });
 CVVersion.belongsTo(JobOffer, { foreignKey: "jobOfferId", as: "jobOffer" });
 
-JobOffer.hasMany(JobAnalysis, {
+JobOffer.hasMany(Presentation, {
   foreignKey: "jobOfferId",
-  as: "analyses",
-  onDelete: "CASCADE",
+  as: "presentations",
+  onDelete: "SET NULL",
 });
-JobAnalysis.belongsTo(JobOffer, { foreignKey: "jobOfferId", as: "jobOffer" });
+Presentation.belongsTo(JobOffer, { foreignKey: "jobOfferId", as: "jobOffer" });
+
 JobOffer.hasMany(InterviewQuestion, {
   foreignKey: "jobOfferId",
   as: "questions",
@@ -72,26 +113,16 @@ InterviewQuestion.belongsTo(JobOffer, {
   as: "jobOffer",
 });
 
-User.hasMany(Presentation, {
-  foreignKey: "userId",
-  as: "presentations",
-  onDelete: "CASCADE",
-});
-Presentation.belongsTo(User, { foreignKey: "userId", as: "user" });
-
-CV.hasMany(Presentation, {
-  foreignKey: "cvId",
-  as: "presentations",
-  onDelete: "SET NULL",
-});
-Presentation.belongsTo(CV, { foreignKey: "cvId", as: "cv" });
-
-JobOffer.hasMany(Presentation, {
+JobOffer.hasMany(InterviewSession, {
   foreignKey: "jobOfferId",
-  as: "presentations",
+  as: "sessions",
   onDelete: "SET NULL",
 });
-Presentation.belongsTo(JobOffer, { foreignKey: "jobOfferId", as: "jobOffer" });
+InterviewSession.belongsTo(JobOffer, {
+  foreignKey: "jobOfferId",
+  as: "jobOffer",
+});
+
 export const db = {
   sequelize,
   User,
@@ -100,8 +131,11 @@ export const db = {
   JobAnalysis,
   CVVersion,
   Presentation,
+
   InterviewQuestion,
+  InterviewSession,
 };
+
 export {
   User,
   CV,
@@ -110,4 +144,5 @@ export {
   CVVersion,
   Presentation,
   InterviewQuestion,
+  InterviewSession,
 };
