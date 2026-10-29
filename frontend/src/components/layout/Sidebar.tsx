@@ -18,7 +18,7 @@ const links = [
   { to: "/analyses", label: "Analyses", icon: Target },
   { to: "/cv-versions", label: "CV adaptés", icon: FileCheck },
   { to: "/presentations", label: "Présentations", icon: Mic },
-  { to: "/interview", label: "Entretien", icon: MessageSquare },
+  { to: "/interview-questions", label: "Questions", icon: MessageSquare },
   { to: "/applications", label: "Candidatures", icon: Send },
   { to: "/settings", label: "Paramètres", icon: Settings },
 ];

@@ -5,6 +5,7 @@ import jobOfferRoutes from "./jobOfferRoutes.js";
 import jobAnalysisRoutes from "./jobAnalysisRoutes.js";
 import cvVersionRoutes from "./cvVersionRoutes.js";
 import presentationRoutes from "./presentationRoutes.js";
+import interviewQuestionRoutes from "./interviewQuestionroutes.js";
 
 const router = Router();
 
@@ -14,5 +15,6 @@ router.use("/job-offers", jobOfferRoutes);
 router.use("/job-analyses", jobAnalysisRoutes);
 router.use("/cv-versions", cvVersionRoutes);
 router.use("/presentations", presentationRoutes);
+router.use("/interview-questions", interviewQuestionRoutes);
 
 export default router;

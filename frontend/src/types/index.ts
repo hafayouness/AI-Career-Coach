@@ -209,3 +209,14 @@ export interface Presentation {
   cv?: { id: number; originalFileName: string };
   jobOffer?: { id: number; title: string; company: string | null };
 }
+
+export interface InterviewQuestion {
+  id: number;
+  category: "RH" | "Technique" | "Comportemental" | "Projet";
+  questionText: string;
+  objective: string;
+  method: string;
+  exampleAnswer: string;
+  mistakesToAvoid: string;
+  jobOffer?: { title: string; company: string };
+}

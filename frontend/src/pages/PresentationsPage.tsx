@@ -71,7 +71,6 @@ export const PresentationsPage = () => {
 
       {error && <Alert variant="error">{error}</Alert>}
 
-      {/* Formulaire */}
       <div className="card" style={{ marginBottom: 24 }}>
         <div
           style={{
@@ -139,7 +138,6 @@ export const PresentationsPage = () => {
           </div>
         </div>
 
-        {/* 🔥 LE BOUTON CENTRÉ AU MILIEU 🔥 */}
         <div
           style={{
             display: "flex",
@@ -158,85 +156,129 @@ export const PresentationsPage = () => {
         </div>
       </div>
 
-      {/* ⏳ LE LOADER GLISSANT ⏳ */}
       {generate.isPending && <PresentationLoader />}
 
       {isLoading && <Spinner dark />}
 
       {/* Liste */}
+      {/* Liste */}
       <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
-        {presentations?.map((p) => (
-          <div key={p.id} className="card">
-            <div
-              style={{
-                display: "flex",
-                justifyContent: "space-between",
-                marginBottom: 12,
-              }}
-            >
-              <div>
-                <div style={{ fontWeight: 600 }}>
-                  {TYPE_LABELS[p.type] || p.type} · {p.jobOffer?.title}
-                </div>
-                <div style={{ fontSize: 12, color: "var(--text-muted)" }}>
-                  {p.jobOffer?.company} · {p.language.toUpperCase()}
-                </div>
-              </div>
-              <div style={{ display: "flex", gap: 8 }}>
-                <Button variant="ghost" onClick={() => handleCopy(p.content)}>
-                  <Copy size={14} /> Copier
-                </Button>
-                <Button
-                  variant="ghost"
-                  onClick={() => {
-                    setEditingId(p.id);
-                    setEditContent(p.content);
-                  }}
-                >
-                  <FileText size={14} /> Modifier
-                </Button>
-                <Button variant="danger" onClick={() => setToDelete(p.id)}>
-                  <Trash2 size={14} />
-                </Button>
-              </div>
-            </div>
+        {presentations?.map((p) => {
+          // Estimer le temps de lecture (200 mots / minute)
+          const wordCount = p.content.split(/\s+/).length;
+          const readingTime = Math.max(1, Math.round(wordCount / 200));
 
-            {editingId === p.id ? (
-              <>
-                <textarea
-                  className="input"
-                  style={{
-                    width: "100%",
-                    minHeight: 120,
-                    fontFamily: "inherit",
-                  }}
-                  value={editContent}
-                  onChange={(e) => setEditContent(e.target.value)}
-                />
-                <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
-                  <Button
-                    variant="primary"
-                    onClick={() => {
-                      update.mutate(
-                        { id: p.id, content: editContent },
-                        { onSuccess: () => setEditingId(null) },
-                      );
+          return (
+            <div
+              key={p.id}
+              className="card"
+              style={{ borderLeft: "4px solid var(--ai)" }}
+            >
+              <div
+                style={{
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "flex-start",
+                  marginBottom: 16,
+                }}
+              >
+                <div>
+                  <h3
+                    style={{ fontSize: 16, fontWeight: 600, marginBottom: 4 }}
+                  >
+                    {TYPE_LABELS[p.type] || p.type}
+                  </h3>
+                  <div style={{ fontSize: 13, color: "var(--text-muted)" }}>
+                    {p.jobOffer?.title} · {p.jobOffer?.company} ·{" "}
+                    {p.language.toUpperCase()}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: 12,
+                      color: "var(--text-light)",
+                      marginTop: 4,
                     }}
                   >
-                    <Save size={14} /> Enregistrer
+                    ⏱️ ~{readingTime} min de lecture · {wordCount} mots
+                  </div>
+                </div>
+
+                <div style={{ display: "flex", gap: 8 }}>
+                  <Button variant="ghost" onClick={() => handleCopy(p.content)}>
+                    <Copy size={14} /> Copier
                   </Button>
-                  <Button variant="ghost" onClick={() => setEditingId(null)}>
-                    Annuler
+                  <Button
+                    variant="ghost"
+                    onClick={() => {
+                      setEditingId(p.id);
+                      setEditContent(p.content);
+                    }}
+                  >
+                    <FileText size={14} /> Modifier
+                  </Button>
+                  <Button variant="danger" onClick={() => setToDelete(p.id)}>
+                    <Trash2 size={14} />
                   </Button>
                 </div>
-              </>
-            ) : (
-              <p style={{ whiteSpace: "pre-wrap", lineHeight: 1.6, margin: 0 }}>
-                {p.content}
-              </p>
-            )}
-          </div>
-        ))}
+              </div>
+
+              {/* Contenu ou édition */}
+              {editingId === p.id ? (
+                <>
+                  <textarea
+                    className="input"
+                    style={{
+                      width: "100%",
+                      minHeight: 200,
+                      fontFamily: "inherit",
+                      lineHeight: 1.6,
+                      fontSize: 15,
+                    }}
+                    value={editContent}
+                    onChange={(e) => setEditContent(e.target.value)}
+                  />
+                  <div style={{ display: "flex", gap: 8, marginTop: 8 }}>
+                    <Button
+                      variant="primary"
+                      onClick={() => {
+                        update.mutate(
+                          { id: p.id, content: editContent },
+                          { onSuccess: () => setEditingId(null) },
+                        );
+                      }}
+                    >
+                      <Save size={14} /> Enregistrer
+                    </Button>
+                    <Button variant="ghost" onClick={() => setEditingId(null)}>
+                      Annuler
+                    </Button>
+                  </div>
+                </>
+              ) : (
+                <div
+                  style={{
+                    background: "var(--surface-2)",
+                    padding: 16,
+                    borderRadius: 8,
+                    border: "1px solid var(--border)",
+                  }}
+                >
+                  <p
+                    style={{
+                      whiteSpace: "pre-wrap",
+                      lineHeight: 1.8,
+                      margin: 0,
+                      fontSize: 15,
+                      fontFamily: "var(--font-display)",
+                    }}
+                  >
+                    "{p.content}"
+                  </p>
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       <ConfirmDialog
