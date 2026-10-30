@@ -220,3 +220,23 @@ export interface InterviewQuestion {
   mistakesToAvoid: string;
   jobOffer?: { title: string; company: string };
 }
+
+export interface InterviewMessage {
+  role: "assistant" | "user" | "system";
+  content: string;
+}
+
+export interface InterviewSession {
+  id: number;
+  userId: number;
+  cvId: number;
+  jobOfferId: number;
+  status: "in_progress" | "completed";
+  history: InterviewMessage[];
+  report: {
+    overallScore: number;
+    strengths: string[];
+    weaknesses: string[];
+    advice: string;
+  } | null;
+}
