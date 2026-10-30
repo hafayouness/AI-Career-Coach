@@ -5,6 +5,7 @@ import { JobOffer } from "./JobOffer.js";
 import { JobAnalysis } from "./JobAnalysis.js";
 import { CVVersion } from "./CVVersion.js";
 import { Presentation } from "./Presentation.js";
+import { Application } from "./Application.js";
 
 import { InterviewQuestion } from "./InterviewQuestion.js";
 import { InterviewSession } from "./InterviewSession.js";
@@ -122,6 +123,29 @@ InterviewSession.belongsTo(JobOffer, {
   foreignKey: "jobOfferId",
   as: "jobOffer",
 });
+User.hasMany(Application, {
+  foreignKey: "userId",
+  as: "applications",
+  onDelete: "CASCADE",
+});
+Application.belongsTo(User, { foreignKey: "userId", as: "user" });
+
+JobOffer.hasMany(Application, {
+  foreignKey: "jobOfferId",
+  as: "applications",
+  onDelete: "SET NULL",
+});
+Application.belongsTo(JobOffer, { foreignKey: "jobOfferId", as: "jobOffer" });
+
+CVVersion.hasMany(Application, {
+  foreignKey: "cvVersionId",
+  as: "applications",
+  onDelete: "SET NULL",
+});
+Application.belongsTo(CVVersion, {
+  foreignKey: "cvVersionId",
+  as: "cvVersion",
+});
 
 export const db = {
   sequelize,
@@ -134,6 +158,7 @@ export const db = {
 
   InterviewQuestion,
   InterviewSession,
+  Application,
 };
 
 export {
@@ -145,4 +170,5 @@ export {
   Presentation,
   InterviewQuestion,
   InterviewSession,
+  Application,
 };

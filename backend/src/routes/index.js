@@ -7,6 +7,7 @@ import cvVersionRoutes from "./cvVersionRoutes.js";
 import presentationRoutes from "./presentationRoutes.js";
 import interviewQuestionRoutes from "./interviewQuestionroutes.js";
 import interviewSimulationRoutes from "./interviewSimulationRoutes.js";
+import applicationRoutes from "./applicationRoutes.js";
 
 const router = Router();
 
@@ -18,5 +19,6 @@ router.use("/cv-versions", cvVersionRoutes);
 router.use("/presentations", presentationRoutes);
 router.use("/interview-questions", interviewQuestionRoutes);
 router.use("/interview-sessions", interviewSimulationRoutes);
+router.use("/applications", applicationRoutes);
 
 export default router;
