@@ -13,6 +13,7 @@ import { CVVersionsPage } from "./pages/CVVersionsPage";
 import { PresentationsPage } from "./pages/PresentationsPage";
 import { InterviewQuestionsPage } from "./pages/InterviewQuestionsPage";
 import { InterviewSimulationPage } from "./pages/InterviewSimulationPage";
+import { ApplicationsPage } from "./pages/ApplicationsPage";
 const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   const token = useAuthStore((s) => s.token);
   if (token) return <Navigate to="/dashboard" replace />;
@@ -57,9 +58,14 @@ export const App = () => (
           element={<InterviewQuestionsPage />}
         />
         <Route
+          path="/interview-questions"
+          element={<InterviewQuestionsPage />}
+        />
+        <Route
           path="/interview-simulation"
           element={<InterviewSimulationPage />}
         />
+        <Route path="/applications" element={<ApplicationsPage />} />
       </Route>
 
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
