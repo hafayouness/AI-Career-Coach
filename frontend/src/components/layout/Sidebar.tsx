@@ -7,6 +7,7 @@ import {
   Send,
   Settings,
   Mic,
+  Video,
 } from "lucide-react";
 import { Target } from "lucide-react";
 import { FileCheck } from "lucide-react";
@@ -19,6 +20,8 @@ const links = [
   { to: "/cv-versions", label: "CV adaptés", icon: FileCheck },
   { to: "/presentations", label: "Présentations", icon: Mic },
   { to: "/interview-questions", label: "Questions", icon: MessageSquare },
+
+  { to: "/interview-simulation", label: "Simulation d'entretien", icon: Video },
   { to: "/applications", label: "Candidatures", icon: Send },
   { to: "/settings", label: "Paramètres", icon: Settings },
 ];
