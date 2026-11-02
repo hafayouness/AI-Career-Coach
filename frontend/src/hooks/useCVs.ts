@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api } from "../services/api";
+import { api, extractError } from "../services/api";
 import type { ApiResponse, CV } from "../types";
+import { useToastStore } from "../store/toastStore";
 
 export const cvKeys = {
   all: ["cvs"] as const,
@@ -36,6 +37,7 @@ export function useCV(id: number | null) {
 
 export function useUploadCV() {
   const queryClient = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
 
   return useMutation({
     mutationFn: async (file: File) => {
@@ -48,12 +50,18 @@ export function useUploadCV() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: cvKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: ["dashboard", "stats"] });
+      addToast("success", "CV importé, analyse en cours…");
+    },
+    onError: (err) => {
+      addToast("error", extractError(err));
     },
   });
 }
 
 export function useDeleteCV() {
   const queryClient = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
 
   return useMutation({
     mutationFn: async (id: number) => {
@@ -61,6 +69,11 @@ export function useDeleteCV() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: cvKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: ["dashboard", "stats"] });
+      addToast("success", "CV supprimé.");
+    },
+    onError: (err) => {
+      addToast("error", extractError(err));
     },
   });
 }

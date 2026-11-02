@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api } from "../services/api";
+import { api, extractError } from "../services/api";
 import type { ApiResponse, Presentation } from "../types";
+import { useToastStore } from "../store/toastStore";
 
 export const presentationKeys = {
   all: ["presentations"] as const,
@@ -20,6 +21,8 @@ export function usePresentations() {
 
 export function useGeneratePresentation() {
   const queryClient = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+
   return useMutation({
     mutationFn: async (input: {
       cvId: number;
@@ -33,13 +36,21 @@ export function useGeneratePresentation() {
       );
       return data.data;
     },
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: presentationKeys.lists() }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: presentationKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: ["dashboard", "stats"] });
+      addToast("success", "Présentation générée avec succès !");
+    },
+    onError: (err) => {
+      addToast("error", extractError(err));
+    },
   });
 }
 
 export function useUpdatePresentation() {
   const queryClient = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+
   return useMutation({
     mutationFn: async ({ id, content }: { id: number; content: string }) => {
       const { data } = await api.patch<ApiResponse<Presentation>>(
@@ -48,18 +59,31 @@ export function useUpdatePresentation() {
       );
       return data.data;
     },
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: presentationKeys.lists() }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: presentationKeys.lists() });
+      addToast("success", "Présentation mise à jour.");
+    },
+    onError: (err) => {
+      addToast("error", extractError(err));
+    },
   });
 }
 
 export function useDeletePresentation() {
   const queryClient = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+
   return useMutation({
     mutationFn: async (id: number) => {
       await api.delete(`/presentations/${id}`);
     },
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: presentationKeys.lists() }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: presentationKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: ["dashboard", "stats"] });
+      addToast("success", "Présentation supprimée.");
+    },
+    onError: (err) => {
+      addToast("error", extractError(err));
+    },
   });
 }

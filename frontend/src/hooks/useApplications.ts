@@ -1,26 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api } from "../services/api";
-import type { ApiResponse } from "../types";
-
-export type ApplicationStatus =
-  | "to_prepare"
-  | "sent"
-  | "interview_scheduled"
-  | "interview_done"
-  | "offer_received"
-  | "rejected"
-  | "withdrawn";
-
-export interface Application {
-  id: number;
-  status: ApplicationStatus;
-  notes: string | null;
-  appliedAt: string | null;
-  interviewAt: string | null;
-  nextAction: string | null;
-  jobOffer?: { title: string; company: string } | null;
-  cvVersion?: { versionNumber: number } | null;
-}
+import { api, extractError } from "../services/api";
+import type { ApiResponse, Application } from "../types";
+import { useToastStore } from "../store/toastStore";
 
 export const appKeys = { all: ["applications"] as const };
 
@@ -37,30 +18,60 @@ export function useApplications() {
 
 export function useCreateApplication() {
   const qc = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+
   return useMutation({
     mutationFn: async (data: any) => {
-      await api.post("/applications", data);
+      const res = await api.post<ApiResponse<Application>>(
+        "/applications",
+        data,
+      );
+      return res.data.data;
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: appKeys.all }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: appKeys.all });
+      qc.invalidateQueries({ queryKey: ["dashboard", "stats"] });
+      addToast("success", "Candidature ajoutée avec succès !");
+    },
+    onError: (err) => {
+      addToast("error", extractError(err));
+    },
   });
 }
-
 export function useUpdateApplication() {
   const qc = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+
   return useMutation({
     mutationFn: async ({ id, ...data }: any) => {
       await api.patch(`/applications/${id}`, data);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: appKeys.all }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: appKeys.all });
+      qc.invalidateQueries({ queryKey: ["dashboard", "stats"] });
+      addToast("success", "Candidature mise à jour.");
+    },
+    onError: (err) => {
+      addToast("error", extractError(err));
+    },
   });
 }
 
 export function useDeleteApplication() {
   const qc = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+
   return useMutation({
     mutationFn: async (id: number) => {
       await api.delete(`/applications/${id}`);
     },
-    onSuccess: () => qc.invalidateQueries({ queryKey: appKeys.all }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: appKeys.all });
+      qc.invalidateQueries({ queryKey: ["dashboard", "stats"] });
+      addToast("success", "Candidature supprimée.");
+    },
+    onError: (err) => {
+      addToast("error", extractError(err));
+    },
   });
 }

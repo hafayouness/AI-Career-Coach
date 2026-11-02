@@ -1,14 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api } from "../services/api";
-import type { ApiResponse, JobOffer } from "../types";
-
-export interface CreateJobOfferInput {
-  title: string;
-  company?: string | null;
-  description: string;
-  sourceUrl?: string | null;
-  location?: string | null;
-}
+import { api, extractError } from "../services/api";
+import type { ApiResponse, JobOffer, CreateJobOfferInput } from "../types";
+import { useToastStore } from "../store/toastStore";
 
 export const jobOfferKeys = {
   all: ["job-offers"] as const,
@@ -16,7 +9,7 @@ export const jobOfferKeys = {
   detail: (id: number) => [...jobOfferKeys.all, "detail", id] as const,
 };
 
-/* ---------- Liste ---------- */
+
 export function useJobOffers() {
   return useQuery({
     queryKey: jobOfferKeys.lists(),
@@ -27,7 +20,7 @@ export function useJobOffers() {
   });
 }
 
-/* ---------- Détail avec polling ---------- */
+
 export function useJobOffer(id: number | null) {
   return useQuery({
     queryKey: id ? jobOfferKeys.detail(id) : ["job-offers", "detail", "none"],
@@ -45,9 +38,10 @@ export function useJobOffer(id: number | null) {
   });
 }
 
-/* ---------- Créer ---------- */
+
 export function useCreateJobOffer() {
   const queryClient = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
 
   return useMutation({
     mutationFn: async (input: CreateJobOfferInput) => {
@@ -59,12 +53,19 @@ export function useCreateJobOffer() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: jobOfferKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: ["dashboard", "stats"] }); // 👈
+      addToast("success", "Offre enregistrée, analyse en cours…");
+    },
+    onError: (err) => {
+      addToast("error", extractError(err));
     },
   });
 }
 
+
 export function useUpdateJobOffer() {
   const queryClient = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
 
   return useMutation({
     mutationFn: async ({
@@ -85,12 +86,18 @@ export function useUpdateJobOffer() {
       queryClient.invalidateQueries({
         queryKey: jobOfferKeys.detail(offer.id),
       });
+      addToast("success", "Offre mise à jour.");
+    },
+    onError: (err) => {
+      addToast("error", extractError(err));
     },
   });
 }
 
+
 export function useDeleteJobOffer() {
   const queryClient = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
 
   return useMutation({
     mutationFn: async (id: number) => {
@@ -98,12 +105,19 @@ export function useDeleteJobOffer() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: jobOfferKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: ["dashboard", "stats"] }); 
+      addToast("success", "Offre supprimée.");
+    },
+    onError: (err) => {
+      addToast("error", extractError(err));
     },
   });
 }
 
+
 export function useExtractJobOfferFromImage() {
   const queryClient = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
 
   return useMutation({
     mutationFn: async (file: File) => {
@@ -118,6 +132,11 @@ export function useExtractJobOfferFromImage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: jobOfferKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: ["dashboard", "stats"] });
+      addToast("success", "Offre extraite depuis l'image !");
+    },
+    onError: (err) => {
+      addToast("error", extractError(err));
     },
   });
 }

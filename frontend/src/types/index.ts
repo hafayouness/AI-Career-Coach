@@ -240,3 +240,70 @@ export interface InterviewSession {
     advice: string;
   } | null;
 }
+
+export interface DashboardStats {
+  cvs: number;
+  offers: number;
+  analyses: number;
+  versions: number;
+  apps: number;
+  presentations: number;
+}
+export type ApplicationStatus =
+  | "to_prepare"
+  | "sent"
+  | "interview_scheduled"
+  | "interview_done"
+  | "offer_received"
+  | "rejected"
+  | "withdrawn";
+export interface Application {
+  id: number;
+  status: ApplicationStatus;
+  notes: string | null;
+  appliedAt: string | null;
+  interviewAt: string | null;
+  nextAction: string | null;
+  jobOffer?: { title: string; company: string } | null;
+  cvVersion?: { versionNumber: number } | null;
+}
+
+export interface ActivityItem {
+  id: string;
+  type: "analysis" | "version" | "application";
+  title: string;
+  date: string;
+  score?: number;
+}
+export type ToastType = "success" | "error" | "info";
+export interface Toast {
+  id: string;
+  type: ToastType;
+  message: string;
+}
+export interface InterviewMessage {
+  role: "assistant" | "user" | "system";
+  content: string;
+}
+export interface CreateJobOfferInput {
+  title: string;
+  company?: string | null;
+  description: string;
+  sourceUrl?: string | null;
+  location?: string | null;
+}
+
+export interface InterviewSession {
+  id: number;
+  userId: number;
+  cvId: number;
+  jobOfferId: number;
+  status: "in_progress" | "completed";
+  history: InterviewMessage[];
+  report: {
+    overallScore: number;
+    strengths: string[];
+    weaknesses: string[];
+    advice: string;
+  } | null;
+}
