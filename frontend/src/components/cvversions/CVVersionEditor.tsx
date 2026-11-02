@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { X, Save, ShieldCheck, Download } from "lucide-react";
+import { X, Save, ShieldCheck, Download, Plus, Trash2 } from "lucide-react";
 import { Button, Spinner, Alert } from "../ui";
 import {
   useCVVersion,
@@ -22,6 +22,9 @@ export const CVVersionEditor = ({ versionId, onClose }: Props) => {
   const [draft, setDraft] = useState<any>(null);
   const [error, setError] = useState("");
   const [downloading, setDownloading] = useState(false);
+  const [newSkill, setNewSkill] = useState("");
+  const [newLangName, setNewLangName] = useState("");
+  const [newLangLevel, setNewLangLevel] = useState("");
 
   useEffect(() => {
     if (version && !draft) setDraft(version.content);
@@ -52,7 +55,10 @@ export const CVVersionEditor = ({ versionId, onClose }: Props) => {
     if (!version || !draft) return;
     setDownloading(true);
     try {
-      await downloadCVVersionPDF(version.id, `CV-${draft.header.name}.pdf`);
+      await downloadCVVersionPDF(
+        version.id,
+        `CV-${(draft.header?.name || "adapte").replace(/\s+/g, "-")}.pdf`,
+      );
     } catch {
       setError("Erreur PDF");
     } finally {
@@ -68,6 +74,48 @@ export const CVVersionEditor = ({ versionId, onClose }: Props) => {
     for (let i = 0; i < keys.length - 1; i++) cur = cur[keys[i]];
     cur[keys[keys.length - 1]] = val;
     setDraft(newDraft);
+  };
+
+  const addExperience = () => {
+    setField("experiences", [
+      ...(draft.experiences || []),
+      {
+        title_and_company: "",
+        dates: "",
+        context: "",
+        missions: [],
+        result: "",
+      },
+    ]);
+  };
+  const removeExperience = (i: number) => {
+    const n = [...draft.experiences];
+    n.splice(i, 1);
+    setField("experiences", n);
+  };
+
+  const addProject = () => {
+    setField("projects", [
+      ...(draft.projects || []),
+      { name: "", dates: "", missions: [], result: "" },
+    ]);
+  };
+  const removeProject = (i: number) => {
+    const n = [...draft.projects];
+    n.splice(i, 1);
+    setField("projects", n);
+  };
+
+  const addEducation = () => {
+    setField("education", [
+      ...(draft.education || []),
+      { title: "", dates: "", details: [] },
+    ]);
+  };
+  const removeEducation = (i: number) => {
+    const n = [...draft.education];
+    n.splice(i, 1);
+    setField("education", n);
   };
 
   if (isLoading || !draft) {
@@ -112,13 +160,12 @@ export const CVVersionEditor = ({ versionId, onClose }: Props) => {
         {error && <Alert variant="error">{error}</Alert>}
 
         <div className="cvversion-editor__form">
-          {/* EN-TÊTE */}
           <section className="cvversion-editor__section">
             <div className="cvversion-editor__section-title">En-tête</div>
             <div className="cvversion-editor__field">
               <label>Nom</label>
               <input
-                value={draft.header.name || ""}
+                value={draft.header?.name || ""}
                 onChange={(e) => setField("header.name", e.target.value)}
                 disabled={isLocked}
               />
@@ -127,7 +174,7 @@ export const CVVersionEditor = ({ versionId, onClose }: Props) => {
               <div className="cvversion-editor__field">
                 <label>Email</label>
                 <input
-                  value={draft.header.email || ""}
+                  value={draft.header?.email || ""}
                   onChange={(e) => setField("header.email", e.target.value)}
                   disabled={isLocked}
                 />
@@ -135,16 +182,16 @@ export const CVVersionEditor = ({ versionId, onClose }: Props) => {
               <div className="cvversion-editor__field">
                 <label>Téléphone</label>
                 <input
-                  value={draft.header.phone || ""}
+                  value={draft.header?.phone || ""}
                   onChange={(e) => setField("header.phone", e.target.value)}
                   disabled={isLocked}
                 />
               </div>
             </div>
             <div className="cvversion-editor__field">
-              <label>Profil (3 lignes max)</label>
+              <label>Profil</label>
               <textarea
-                value={draft.header.summary || ""}
+                value={draft.header?.summary || ""}
                 onChange={(e) => setField("header.summary", e.target.value)}
                 disabled={isLocked}
                 rows={3}
@@ -152,36 +199,189 @@ export const CVVersionEditor = ({ versionId, onClose }: Props) => {
             </div>
           </section>
 
-          {/* COMPÉTENCES */}
           <section className="cvversion-editor__section">
-            <div className="cvversion-editor__section-title">Compétences</div>
-            {["langages", "frameworks", "outils", "methodologies"].map(
-              (cat) => (
-                <div className="cvversion-editor__field" key={cat}>
-                  <label style={{ textTransform: "capitalize" }}>{cat}</label>
-                  <input
-                    value={(draft.skills?.[cat] || []).join(", ")}
-                    onChange={(e) =>
-                      setField(
-                        `skills.${cat}`,
-                        e.target.value
-                          .split(",")
-                          .map((s) => s.trim())
-                          .filter(Boolean),
-                      )
-                    }
-                    disabled={isLocked}
-                  />
-                </div>
-              ),
-            )}
-          </section>
+            <div className="cvversion-editor__section-title">
+              <span>Compétences</span>
+            </div>
 
-          {/* EXPÉRIENCES */}
+            {(() => {
+              const currentSkills: string[] = Array.isArray(draft.skills)
+                ? draft.skills
+                : draft.skills && typeof draft.skills === "object"
+                  ? (Object.values(draft.skills).flat() as string[])
+                  : [];
+
+              return (
+                <>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: 8,
+                      marginBottom: 12,
+                    }}
+                  >
+                    {currentSkills.length === 0 && (
+                      <span
+                        style={{
+                          fontSize: 13,
+                          color: "var(--text-muted)",
+                          fontStyle: "italic",
+                        }}
+                      >
+                        Aucune compétence. Ajoutez-en ci-dessous.
+                      </span>
+                    )}
+                    {currentSkills.map((skill, i) => (
+                      <span
+                        key={`${skill}-${i}`}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 6,
+                          background: "var(--primary-soft)",
+                          color: "var(--primary)",
+                          padding: "6px 12px",
+                          borderRadius: 999,
+                          fontSize: 13,
+                          fontWeight: 500,
+                          border: "1px solid #c7d2fe",
+                        }}
+                      >
+                        {skill}
+                        {!isLocked && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const next = [...currentSkills];
+                              next.splice(i, 1);
+                              setField("skills", next);
+                            }}
+                            style={{
+                              background: "none",
+                              border: "none",
+                              color: "var(--primary)",
+                              cursor: "pointer",
+                              padding: 0,
+                              display: "flex",
+                              fontSize: 14,
+                              lineHeight: 1,
+                            }}
+                            aria-label="Supprimer"
+                          >
+                            ×
+                          </button>
+                        )}
+                      </span>
+                    ))}
+                  </div>
+
+                  {!isLocked && (
+                    <div style={{ display: "flex", gap: 8 }}>
+                      <input
+                        type="text"
+                        className="input"
+                        placeholder="Ajouter une compétence (ex: React)"
+                        value={newSkill}
+                        onChange={(e) => setNewSkill(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            const trimmed = newSkill.trim();
+                            if (trimmed && !currentSkills.includes(trimmed)) {
+                              setField("skills", [...currentSkills, trimmed]);
+                              setNewSkill("");
+                            }
+                          }
+                        }}
+                        style={{ flex: 1 }}
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const trimmed = newSkill.trim();
+                          if (trimmed && !currentSkills.includes(trimmed)) {
+                            setField("skills", [...currentSkills, trimmed]);
+                            setNewSkill("");
+                          }
+                        }}
+                        style={{
+                          background: "var(--primary)",
+                          color: "#fff",
+                          border: "none",
+                          padding: "0 16px",
+                          borderRadius: 8,
+                          fontSize: 13,
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 4,
+                        }}
+                      >
+                        <Plus size={14} /> Ajouter
+                      </button>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
+          </section>
           <section className="cvversion-editor__section">
-            <div className="cvversion-editor__section-title">Expériences</div>
+            <div
+              className="cvversion-editor__section-title"
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <span>Expériences</span>
+              {!isLocked && (
+                <button
+                  type="button"
+                  onClick={addExperience}
+                  style={{
+                    background: "var(--primary-soft)",
+                    border: "none",
+                    color: "var(--primary)",
+                    padding: "4px 10px",
+                    borderRadius: 6,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
+                >
+                  <Plus size={12} /> Ajouter
+                </button>
+              )}
+            </div>
             {(draft.experiences || []).map((exp: any, i: number) => (
-              <div className="cvversion-editor__item" key={i}>
+              <div
+                className="cvversion-editor__item"
+                key={i}
+                style={{ position: "relative" }}
+              >
+                {!isLocked && (
+                  <button
+                    type="button"
+                    onClick={() => removeExperience(i)}
+                    style={{
+                      position: "absolute",
+                      top: 8,
+                      right: 8,
+                      background: "none",
+                      border: "none",
+                      color: "var(--danger)",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
                 <div className="cvversion-editor__field">
                   <label>Titre & Entreprise</label>
                   <input
@@ -261,11 +461,61 @@ export const CVVersionEditor = ({ versionId, onClose }: Props) => {
             ))}
           </section>
 
-          {/* PROJETS */}
           <section className="cvversion-editor__section">
-            <div className="cvversion-editor__section-title">Projets</div>
+            <div
+              className="cvversion-editor__section-title"
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <span>Projets</span>
+              {!isLocked && (
+                <button
+                  type="button"
+                  onClick={addProject}
+                  style={{
+                    background: "var(--primary-soft)",
+                    border: "none",
+                    color: "var(--primary)",
+                    padding: "4px 10px",
+                    borderRadius: 6,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
+                >
+                  <Plus size={12} /> Ajouter
+                </button>
+              )}
+            </div>
             {(draft.projects || []).map((proj: any, i: number) => (
-              <div className="cvversion-editor__item" key={i}>
+              <div
+                className="cvversion-editor__item"
+                key={i}
+                style={{ position: "relative" }}
+              >
+                {!isLocked && (
+                  <button
+                    type="button"
+                    onClick={() => removeProject(i)}
+                    style={{
+                      position: "absolute",
+                      top: 8,
+                      right: 8,
+                      background: "none",
+                      border: "none",
+                      color: "var(--danger)",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
                 <div className="cvversion-editor__field">
                   <label>Nom</label>
                   <input
@@ -325,11 +575,61 @@ export const CVVersionEditor = ({ versionId, onClose }: Props) => {
             ))}
           </section>
 
-          {/* FORMATIONS */}
           <section className="cvversion-editor__section">
-            <div className="cvversion-editor__section-title">Formations</div>
+            <div
+              className="cvversion-editor__section-title"
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+              }}
+            >
+              <span>Formations</span>
+              {!isLocked && (
+                <button
+                  type="button"
+                  onClick={addEducation}
+                  style={{
+                    background: "var(--primary-soft)",
+                    border: "none",
+                    color: "var(--primary)",
+                    padding: "4px 10px",
+                    borderRadius: 6,
+                    fontSize: 12,
+                    fontWeight: 600,
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
+                >
+                  <Plus size={12} /> Ajouter
+                </button>
+              )}
+            </div>
             {(draft.education || []).map((edu: any, i: number) => (
-              <div className="cvversion-editor__item" key={i}>
+              <div
+                className="cvversion-editor__item"
+                key={i}
+                style={{ position: "relative" }}
+              >
+                {!isLocked && (
+                  <button
+                    type="button"
+                    onClick={() => removeEducation(i)}
+                    style={{
+                      position: "absolute",
+                      top: 8,
+                      right: 8,
+                      background: "none",
+                      border: "none",
+                      color: "var(--danger)",
+                      cursor: "pointer",
+                    }}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
                 <div className="cvversion-editor__field">
                   <label>Titre</label>
                   <input
@@ -376,17 +676,164 @@ export const CVVersionEditor = ({ versionId, onClose }: Props) => {
             ))}
           </section>
 
-          {/* LANGUES */}
           <section className="cvversion-editor__section">
             <div className="cvversion-editor__section-title">Langues</div>
-            <div className="cvversion-editor__field">
-              <label>Langues</label>
-              <input
-                value={draft.languages || ""}
-                onChange={(e) => setField("languages", e.target.value)}
-                disabled={isLocked}
-              />
-            </div>
+
+            {(() => {
+              const currentLangs: { language: string; level: string | null }[] =
+                Array.isArray(draft.languages)
+                  ? draft.languages.map((l: any) =>
+                      typeof l === "string"
+                        ? { language: l, level: null }
+                        : {
+                            language: l?.language || "",
+                            level: l?.level || null,
+                          },
+                    )
+                  : typeof draft.languages === "string"
+                    ? draft.languages.split(/[|,]/).map((s: string) => {
+                        const [language, level] = s
+                          .split(":")
+                          .map((x) => x.trim());
+                        return {
+                          language: language || "",
+                          level: level || null,
+                        };
+                      })
+                    : [];
+
+              return (
+                <>
+                  <div
+                    style={{
+                      display: "flex",
+                      flexWrap: "wrap",
+                      gap: 8,
+                      marginBottom: 12,
+                    }}
+                  >
+                    {currentLangs.length === 0 && (
+                      <span
+                        style={{
+                          fontSize: 13,
+                          color: "var(--text-muted)",
+                          fontStyle: "italic",
+                        }}
+                      >
+                        Aucune langue. Ajoutez-en ci-dessous.
+                      </span>
+                    )}
+                    {currentLangs.map((lang, i) => (
+                      <span
+                        key={`${lang.language}-${i}`}
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 6,
+                          background: "var(--accent-soft)",
+                          color: "#365314",
+                          padding: "6px 12px",
+                          borderRadius: 999,
+                          fontSize: 13,
+                          fontWeight: 500,
+                          border: "1px solid #d9f99d",
+                        }}
+                      >
+                        <strong>{lang.language}</strong>
+                        {lang.level && (
+                          <span style={{ opacity: 0.75 }}>· {lang.level}</span>
+                        )}
+                        {!isLocked && (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const next = [...currentLangs];
+                              next.splice(i, 1);
+                              setField("languages", next);
+                            }}
+                            style={{
+                              background: "none",
+                              border: "none",
+                              color: "#365314",
+                              cursor: "pointer",
+                              padding: 0,
+                              display: "flex",
+                              fontSize: 14,
+                              lineHeight: 1,
+                            }}
+                            aria-label="Supprimer"
+                          >
+                            ×
+                          </button>
+                        )}
+                      </span>
+                    ))}
+                  </div>
+
+                  {!isLocked && (
+                    <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                      <input
+                        type="text"
+                        className="input"
+                        placeholder="Langue (ex: Français)"
+                        value={newLangName}
+                        onChange={(e) => setNewLangName(e.target.value)}
+                        style={{ flex: "1 1 140px" }}
+                      />
+                      <select
+                        className="input"
+                        value={newLangLevel}
+                        onChange={(e) => setNewLangLevel(e.target.value)}
+                        style={{ flex: "1 1 120px" }}
+                      >
+                        <option value="">— Niveau —</option>
+                        <option value="natif">Natif</option>
+                        <option value="bilingue">Bilingue</option>
+                        <option value="courant">Courant</option>
+                        <option value="professionnel">Professionnel</option>
+                        <option value="technique">Technique</option>
+                        <option value="intermédiaire">Intermédiaire</option>
+                        <option value="notions">Notions</option>
+                      </select>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          const name = newLangName.trim();
+                          if (!name) return;
+                          const exists = currentLangs.some(
+                            (l) =>
+                              l.language.toLowerCase() === name.toLowerCase(),
+                          );
+                          if (exists) return;
+                          setField("languages", [
+                            ...currentLangs,
+                            { language: name, level: newLangLevel || null },
+                          ]);
+                          setNewLangName("");
+                          setNewLangLevel("");
+                        }}
+                        style={{
+                          background: "var(--primary)",
+                          color: "#fff",
+                          border: "none",
+                          padding: "0 16px",
+                          borderRadius: 8,
+                          fontSize: 13,
+                          fontWeight: 600,
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          gap: 4,
+                          minHeight: 38,
+                        }}
+                      >
+                        <Plus size={14} /> Ajouter
+                      </button>
+                    </div>
+                  )}
+                </>
+              );
+            })()}
           </section>
         </div>
 

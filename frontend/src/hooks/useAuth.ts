@@ -26,7 +26,6 @@ export function useLogin() {
 
 export function useRegister() {
   const navigate = useNavigate();
-  const setAuth = useAuthStore((s) => s.setAuth);
 
   return useMutation({
     mutationFn: async (p: {
@@ -40,9 +39,8 @@ export function useRegister() {
       );
       return data.data;
     },
-    onSuccess: (d) => {
-      setAuth(d.user, d.token);
-      navigate("/dashboard");
+    onSuccess: () => {
+      navigate("/login");
     },
   });
 }

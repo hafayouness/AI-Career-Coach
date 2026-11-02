@@ -136,3 +136,26 @@ export async function downloadCVVersionPDF(id: number, filename: string) {
   link.click();
   URL.revokeObjectURL(url);
 }
+
+export function useCreateManualCVVersion() {
+  const queryClient = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+
+  return useMutation({
+    mutationFn: async (input: { cvId: number; jobOfferId: number }) => {
+      const { data } = await api.post<ApiResponse<CVVersion>>(
+        "/cv-versions/manual",
+        input,
+      );
+      return data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: cvVersionKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: ["dashboard", "stats"] });
+      addToast("success", "CV adapté créé manuellement !");
+    },
+    onError: (err) => {
+      addToast("error", extractError(err));
+    },
+  });
+}
