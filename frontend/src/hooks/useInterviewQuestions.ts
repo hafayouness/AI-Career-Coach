@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api } from "../services/api";
+import { api, extractError } from "../services/api";
 import type { ApiResponse, InterviewQuestion } from "../types";
+import { useToastStore } from "../store/toastStore";
 
 export const questionKeys = { all: ["interview-questions"] as const };
 
@@ -18,6 +19,8 @@ export function useInterviewQuestions() {
 
 export function useGenerateQuestions() {
   const queryClient = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+
   return useMutation({
     mutationFn: async (input: {
       cvId: number;
@@ -30,18 +33,35 @@ export function useGenerateQuestions() {
       );
       return data.data;
     },
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: questionKeys.all }),
+    onSuccess: (questions) => {
+      queryClient.invalidateQueries({ queryKey: questionKeys.all });
+      queryClient.invalidateQueries({ queryKey: ["dashboard", "stats"] }); // 👈 Dashboard
+      addToast(
+        "success",
+        `${questions.length} questions générées avec succès !`,
+      );
+    },
+    onError: (err) => {
+      addToast("error", extractError(err));
+    },
   });
 }
 
 export function useDeleteQuestion() {
   const queryClient = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+
   return useMutation({
     mutationFn: async (id: number) => {
       await api.delete(`/interview-questions/${id}`);
     },
-    onSuccess: () =>
-      queryClient.invalidateQueries({ queryKey: questionKeys.all }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: questionKeys.all });
+      queryClient.invalidateQueries({ queryKey: ["dashboard", "stats"] });
+      addToast("success", "Question supprimée.");
+    },
+    onError: (err) => {
+      addToast("error", extractError(err));
+    },
   });
 }

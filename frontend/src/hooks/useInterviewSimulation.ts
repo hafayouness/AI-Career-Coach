@@ -1,28 +1,12 @@
-import { useMutation } from "@tanstack/react-query";
-import { api } from "../services/api";
-import type { ApiResponse } from "../types";
-
-export interface InterviewMessage {
-  role: "assistant" | "user" | "system";
-  content: string;
-}
-
-export interface InterviewSession {
-  id: number;
-  userId: number;
-  cvId: number;
-  jobOfferId: number;
-  status: "in_progress" | "completed";
-  history: InterviewMessage[];
-  report: {
-    overallScore: number;
-    strengths: string[];
-    weaknesses: string[];
-    advice: string;
-  } | null;
-}
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { api, extractError } from "../services/api";
+import type { ApiResponse, InterviewSession } from "../types";
+import { useToastStore } from "../store/toastStore";
 
 export function useStartInterview() {
+  const queryClient = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+
   return useMutation({
     mutationFn: async (data: { cvId: number; jobOfferId: number }) => {
       const res = await api.post<
@@ -30,10 +14,19 @@ export function useStartInterview() {
       >("/interview-sessions", data);
       return res.data.data;
     },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["dashboard", "stats"] });
+      addToast("success", "Entretien démarré. Bonne chance !");
+    },
+    onError: (err) => {
+      addToast("error", extractError(err));
+    },
   });
 }
 
 export function useAnswerInterview() {
+  const addToast = useToastStore((s) => s.addToast);
+
   return useMutation({
     mutationFn: async ({ id, answer }: { id: number; answer: string }) => {
       const res = await api.post<
@@ -41,16 +34,29 @@ export function useAnswerInterview() {
       >(`/interview-sessions/${id}/answer`, { answer });
       return res.data.data;
     },
+    onError: (err) => {
+      addToast("error", extractError(err));
+    },
   });
 }
 
 export function useFinishInterview() {
+  const queryClient = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+
   return useMutation({
     mutationFn: async (id: number) => {
       const res = await api.post<ApiResponse<InterviewSession>>(
         `/interview-sessions/${id}/finish`,
       );
       return res.data.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["dashboard", "stats"] });
+      addToast("success", "Rapport d'entretien généré !");
+    },
+    onError: (err) => {
+      addToast("error", extractError(err));
     },
   });
 }

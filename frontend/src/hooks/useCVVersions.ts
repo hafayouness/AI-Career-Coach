@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { api } from "../services/api";
+import { api, extractError } from "../services/api";
 import type { ApiResponse, CVVersion, CVVersionContent } from "../types";
+import { useToastStore } from "../store/toastStore";
 
 export const cvVersionKeys = {
   all: ["cv-versions"] as const,
@@ -33,6 +34,8 @@ export function useCVVersion(id: number | null) {
 
 export function useGenerateCVVersion() {
   const queryClient = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+
   return useMutation({
     mutationFn: async (input: { cvId: number; jobOfferId: number }) => {
       const { data } = await api.post<ApiResponse<CVVersion>>(
@@ -41,14 +44,21 @@ export function useGenerateCVVersion() {
       );
       return data.data;
     },
-    onSuccess: () => {
+    onSuccess: (v) => {
       queryClient.invalidateQueries({ queryKey: cvVersionKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: ["dashboard", "stats"] }); // 👈
+      addToast("success", `CV adapté v${v.versionNumber} généré !`);
+    },
+    onError: (err) => {
+      addToast("error", extractError(err));
     },
   });
 }
 
 export function useUpdateCVVersion() {
   const queryClient = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+
   return useMutation({
     mutationFn: async ({
       id,
@@ -66,12 +76,18 @@ export function useUpdateCVVersion() {
     onSuccess: (v) => {
       queryClient.invalidateQueries({ queryKey: cvVersionKeys.detail(v.id) });
       queryClient.invalidateQueries({ queryKey: cvVersionKeys.lists() });
+      addToast("success", "CV adapté mis à jour.");
+    },
+    onError: (err) => {
+      addToast("error", extractError(err));
     },
   });
 }
 
 export function useValidateCVVersion() {
   const queryClient = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+
   return useMutation({
     mutationFn: async (id: number) => {
       const { data } = await api.post<ApiResponse<CVVersion>>(
@@ -82,18 +98,29 @@ export function useValidateCVVersion() {
     onSuccess: (v) => {
       queryClient.invalidateQueries({ queryKey: cvVersionKeys.detail(v.id) });
       queryClient.invalidateQueries({ queryKey: cvVersionKeys.lists() });
+      addToast("success", "CV validé. Il ne peut plus être modifié.");
+    },
+    onError: (err) => {
+      addToast("error", extractError(err));
     },
   });
 }
 
 export function useDeleteCVVersion() {
   const queryClient = useQueryClient();
+  const addToast = useToastStore((s) => s.addToast);
+
   return useMutation({
     mutationFn: async (id: number) => {
       await api.delete(`/cv-versions/${id}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: cvVersionKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: ["dashboard", "stats"] }); // 👈
+      addToast("success", "Version supprimée.");
+    },
+    onError: (err) => {
+      addToast("error", extractError(err));
     },
   });
 }
