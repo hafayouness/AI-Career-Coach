@@ -307,3 +307,28 @@ export interface InterviewSession {
     advice: string;
   } | null;
 }
+
+export interface CVGap {
+  skills: {
+    matched: string[];
+    missing: string[];
+    matchedPreferred: string[];
+    missingPreferred: string[];
+  };
+  experience: {
+    totalYears: number;
+    required: string;
+    sufficient: boolean;
+  };
+  education: {
+    has: boolean;
+    required: string;
+    sufficient: boolean;
+  };
+  recommendations: {
+    type: "skill" | "experience" | "education";
+    priority: "high" | "medium" | "low";
+    message: string;
+    suggestion?: string;
+  }[];
+}

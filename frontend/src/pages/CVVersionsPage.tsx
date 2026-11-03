@@ -1,5 +1,12 @@
 import { useState } from "react";
-import { Sparkles, FileText, Plus } from "lucide-react";
+import {
+  Sparkles,
+  FileText,
+  Plus,
+  Briefcase,
+  CheckCircle2,
+  X,
+} from "lucide-react";
 import {
   useCVVersions,
   useDeleteCVVersion,
@@ -35,6 +42,8 @@ export const CVVersionsPage = () => {
   const readyCVs = cvs?.filter((c) => c.processingStatus === "completed") ?? [];
   const readyOffers =
     offers?.filter((o) => o.parsingStatus === "completed") ?? [];
+  const selectedCV = readyCVs.find((c) => c.id === Number(manualCvId));
+  const selectedOffer = readyOffers.find((o) => o.id === Number(manualOfferId));
 
   const handleGenerate = (cvId: number, jobOfferId: number) => {
     setShowGenerator(false);
@@ -149,52 +158,259 @@ export const CVVersionsPage = () => {
           <div
             className="offer-form"
             onClick={(e) => e.stopPropagation()}
-            style={{ height: "auto" }}
+            style={{ height: "auto", maxHeight: "90vh", maxWidth: 820 }}
           >
             <div className="offer-form__header">
-              <h2 className="offer-form__title">Créer un CV manuellement</h2>
+              <div>
+                <h2 className="offer-form__title">Créer un CV adapté</h2>
+                <p
+                  style={{
+                    fontSize: 13,
+                    color: "var(--text-muted)",
+                    margin: "4px 0 0 0",
+                  }}
+                >
+                  Sélectionnez un CV et une offre pour créer une base éditable.
+                </p>
+              </div>
               <button
                 className="offer-form__close"
                 onClick={() => setShowManualModal(false)}
               >
-                ✕
+                <X size={16} />
               </button>
             </div>
 
-            <div className="field">
-              <label>CV source</label>
-              <select
-                className="input"
-                value={manualCvId}
-                onChange={(e) => setManualCvId(e.target.value)}
-              >
-                <option value="">— Sélectionner un CV —</option>
-                {readyCVs.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.parsedData?.name || c.originalFileName}
-                  </option>
-                ))}
-              </select>
+            {error && <Alert variant="error">{error}</Alert>}
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr 1fr",
+                gap: 16,
+                marginTop: 8,
+              }}
+            >
+              <div>
+                <div className="field" style={{ marginBottom: 12 }}>
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      fontSize: 13,
+                    }}
+                  >
+                    <FileText size={14} /> CV source
+                  </label>
+                  <select
+                    className="input"
+                    value={manualCvId}
+                    onChange={(e) => setManualCvId(e.target.value)}
+                  >
+                    <option value="">— Sélectionner un CV —</option>
+                    {readyCVs.map((c) => (
+                      <option key={c.id} value={c.id}>
+                        {c.parsedData?.name || c.originalFileName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {selectedCV && (
+                  <div
+                    style={{
+                      background: "var(--surface-2)",
+                      border: "1px solid var(--border)",
+                      borderRadius: 8,
+                      padding: 12,
+                      fontSize: 12,
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontWeight: 600,
+                        marginBottom: 8,
+                        color: "var(--text)",
+                      }}
+                    >
+                      {selectedCV.parsedData?.name || "CV sans nom"}
+                    </div>
+
+                    {selectedCV.parsedData?.summary && (
+                      <div
+                        style={{
+                          color: "var(--text-muted)",
+                          marginBottom: 8,
+                          fontStyle: "italic",
+                          lineHeight: 1.4,
+                        }}
+                      >
+                        {selectedCV.parsedData.summary.slice(0, 120)}...
+                      </div>
+                    )}
+
+                    <div style={{ display: "flex", gap: 16 }}>
+                      <div>
+                        <span style={{ color: "var(--text-light)" }}>
+                          Expériences :
+                        </span>{" "}
+                        <strong>
+                          {selectedCV.parsedData?.experiences?.length || 0}
+                        </strong>
+                      </div>
+                      <div>
+                        <span style={{ color: "var(--text-light)" }}>
+                          Formations :
+                        </span>{" "}
+                        <strong>
+                          {selectedCV.parsedData?.education?.length || 0}
+                        </strong>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div>
+                <div className="field" style={{ marginBottom: 12 }}>
+                  <label
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                      fontSize: 13,
+                    }}
+                  >
+                    <Briefcase size={14} /> Offre cible
+                  </label>
+                  <select
+                    className="input"
+                    value={manualOfferId}
+                    onChange={(e) => setManualOfferId(e.target.value)}
+                  >
+                    <option value="">— Sélectionner une offre —</option>
+                    {readyOffers.map((o) => (
+                      <option key={o.id} value={o.id}>
+                        {o.title}
+                        {o.company ? ` — ${o.company}` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {selectedOffer && (
+                  <div
+                    style={{
+                      background: "var(--surface-2)",
+                      border: "1px solid var(--border)",
+                      borderRadius: 8,
+                      padding: 12,
+                      fontSize: 12,
+                    }}
+                  >
+                    <div
+                      style={{
+                        fontWeight: 600,
+                        marginBottom: 4,
+                        color: "var(--text)",
+                      }}
+                    >
+                      {selectedOffer.title}
+                    </div>
+                    <div
+                      style={{
+                        color: "var(--text-muted)",
+                        marginBottom: 8,
+                      }}
+                    >
+                      {selectedOffer.company || "—"}
+                      {selectedOffer.location
+                        ? ` · ${selectedOffer.location}`
+                        : ""}
+                    </div>
+
+                    {selectedOffer.requirements?.requiredSkills &&
+                      selectedOffer.requirements.requiredSkills.length > 0 && (
+                        <>
+                          <div
+                            style={{
+                              color: "var(--text-light)",
+                              marginBottom: 4,
+                              fontSize: 11,
+                            }}
+                          >
+                            Compétences requises :
+                          </div>
+                          <div
+                            style={{
+                              display: "flex",
+                              flexWrap: "wrap",
+                              gap: 4,
+                            }}
+                          >
+                            {selectedOffer.requirements.requiredSkills
+                              .slice(0, 6)
+                              .map((s) => (
+                                <span
+                                  key={s}
+                                  style={{
+                                    fontSize: 10,
+                                    padding: "2px 6px",
+                                    borderRadius: 4,
+                                    background: "var(--primary-soft)",
+                                    color: "var(--primary)",
+                                  }}
+                                >
+                                  {s}
+                                </span>
+                              ))}
+                            {selectedOffer.requirements.requiredSkills.length >
+                              6 && (
+                              <span
+                                style={{
+                                  fontSize: 10,
+                                  color: "var(--text-muted)",
+                                  padding: "2px 6px",
+                                }}
+                              >
+                                +
+                                {selectedOffer.requirements.requiredSkills
+                                  .length - 6}
+                              </span>
+                            )}
+                          </div>
+                        </>
+                      )}
+                  </div>
+                )}
+              </div>
             </div>
 
-            <div className="field">
-              <label>Offre cible</label>
-              <select
-                className="input"
-                value={manualOfferId}
-                onChange={(e) => setManualOfferId(e.target.value)}
+            {selectedCV && selectedOffer && (
+              <div
+                style={{
+                  marginTop: 16,
+                  padding: 12,
+                  background: "var(--success-soft)",
+                  border: "1px solid #bbf7d0",
+                  borderRadius: 8,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 8,
+                  fontSize: 13,
+                  color: "#166534",
+                }}
               >
-                <option value="">— Sélectionner une offre —</option>
-                {readyOffers.map((o) => (
-                  <option key={o.id} value={o.id}>
-                    {o.title}
-                    {o.company ? ` — ${o.company}` : ""}
-                  </option>
-                ))}
-              </select>
-            </div>
+                <CheckCircle2 size={16} />
+                <span>
+                  CV adapté pour <strong>{selectedOffer.title}</strong> prêt à
+                  être créé.
+                </span>
+              </div>
+            )}
 
-            <div className="offer-form__actions">
+            <div className="offer-form__actions" style={{ marginTop: 16 }}>
               <Button variant="ghost" onClick={() => setShowManualModal(false)}>
                 Annuler
               </Button>
@@ -204,7 +420,7 @@ export const CVVersionsPage = () => {
                 loading={createManual.isPending}
                 disabled={!manualCvId || !manualOfferId}
               >
-                Créer le CV
+                Créer votre CV adapté
               </Button>
             </div>
           </div>
