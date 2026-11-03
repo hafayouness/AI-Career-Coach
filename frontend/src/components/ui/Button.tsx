@@ -1,7 +1,7 @@
 import type { ButtonHTMLAttributes, ReactNode } from "react";
 import { Spinner } from "./Spinner";
 
-type Variant = "primary" | "ai" | "ghost" | "danger";
+type Variant = "primary" | "ai" | "ghost" | "danger" | "manual";
 
 interface Props extends ButtonHTMLAttributes<HTMLButtonElement> {
   variant?: Variant;

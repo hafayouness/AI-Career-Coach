@@ -1,13 +1,25 @@
 import { useEffect, useState } from "react";
-import { X, Save, ShieldCheck, Download, Plus, Trash2 } from "lucide-react";
+import {
+  X,
+  Save,
+  ShieldCheck,
+  Download,
+  Plus,
+  Trash2,
+  Edit3,
+  Sparkles,
+} from "lucide-react";
 import { Button, Spinner, Alert } from "../ui";
 import {
   useCVVersion,
   useUpdateCVVersion,
   useValidateCVVersion,
   downloadCVVersionPDF,
+  useCVGaps,
 } from "../../hooks/useCVVersions";
 import { extractError } from "../../services/api";
+import { CVVersionGaps } from "./CVVersionGaps";
+import { useToastStore } from "../../store/toastStore";
 
 interface Props {
   versionId: number;
@@ -16,8 +28,10 @@ interface Props {
 
 export const CVVersionEditor = ({ versionId, onClose }: Props) => {
   const { data: version, isLoading, isError } = useCVVersion(versionId);
+  const { data: gaps } = useCVGaps(versionId);
   const update = useUpdateCVVersion();
   const validate = useValidateCVVersion();
+  const addToast = useToastStore((s) => s.addToast);
 
   const [draft, setDraft] = useState<any>(null);
   const [error, setError] = useState("");
@@ -60,7 +74,7 @@ export const CVVersionEditor = ({ versionId, onClose }: Props) => {
         `CV-${(draft.header?.name || "adapte").replace(/\s+/g, "-")}.pdf`,
       );
     } catch {
-      setError("Erreur PDF");
+      addToast("error", "Erreur PDF");
     } finally {
       setDownloading(false);
     }
@@ -151,6 +165,47 @@ export const CVVersionEditor = ({ versionId, onClose }: Props) => {
             <h2 className="cvversion-editor__title">
               {version?.jobOffer?.title || "CV adapté"}
             </h2>
+            <div
+              className="cvversion-editor__meta"
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                flexWrap: "wrap",
+              }}
+            >
+              <span>
+                v{version?.versionNumber} · {version?.jobOffer?.company || "—"}
+                {version?.validated && " · Validé"}
+              </span>
+              {version?.changeSummary?.reorganized?.includes(
+                "Création manuelle",
+              ) ? (
+                <span
+                  className="version-badge"
+                  style={{
+                    background: "var(--primary-soft)",
+                    color: "var(--primary)",
+                    borderColor: "#c7d2fe",
+                    fontSize: 10,
+                  }}
+                >
+                  <Edit3 size={10} /> Manuel
+                </span>
+              ) : (
+                <span
+                  className="version-badge"
+                  style={{
+                    background: "var(--ai-soft)",
+                    color: "var(--ai)",
+                    borderColor: "#d9f99d",
+                    fontSize: 10,
+                  }}
+                >
+                  <Sparkles size={10} /> IA
+                </span>
+              )}
+            </div>
           </div>
           <button className="cvversion-editor__close" onClick={onClose}>
             <X size={16} />
@@ -166,7 +221,9 @@ export const CVVersionEditor = ({ versionId, onClose }: Props) => {
               <label>Nom</label>
               <input
                 value={draft.header?.name || ""}
-                onChange={(e) => setField("header.name", e.target.value)}
+                onChange={(e) =>
+                  setField("header.name", e.target.value.replace(/^#+\s*/, ""))
+                }
                 disabled={isLocked}
               />
             </div>
@@ -188,6 +245,32 @@ export const CVVersionEditor = ({ versionId, onClose }: Props) => {
                 />
               </div>
             </div>
+            <div className="cvversion-editor__row">
+              <div className="cvversion-editor__field">
+                <label>GitHub</label>
+                <input
+                  value={draft.header?.github || ""}
+                  onChange={(e) => setField("header.github", e.target.value)}
+                  disabled={isLocked}
+                />
+              </div>
+              <div className="cvversion-editor__field">
+                <label>LinkedIn</label>
+                <input
+                  value={draft.header?.linkedin || ""}
+                  onChange={(e) => setField("header.linkedin", e.target.value)}
+                  disabled={isLocked}
+                />
+              </div>
+            </div>
+            <div className="cvversion-editor__field">
+              <label>Portfolio</label>
+              <input
+                value={draft.header?.portfolio || ""}
+                onChange={(e) => setField("header.portfolio", e.target.value)}
+                disabled={isLocked}
+              />
+            </div>
             <div className="cvversion-editor__field">
               <label>Profil</label>
               <textarea
@@ -199,18 +282,177 @@ export const CVVersionEditor = ({ versionId, onClose }: Props) => {
             </div>
           </section>
 
+          {/* ==================== COMPÉTENCES ==================== */}
           <section className="cvversion-editor__section">
-            <div className="cvversion-editor__section-title">
-              <span>Compétences</span>
-            </div>
+            <div className="cvversion-editor__section-title">Compétences</div>
 
             {(() => {
+              // Détecte le format : objet catégorisé ou tableau simple
+              const isCategorized =
+                draft.skills &&
+                typeof draft.skills === "object" &&
+                !Array.isArray(draft.skills);
+
+              if (isCategorized) {
+                const categories = [
+                  { key: "langages", label: "Langages" },
+                  { key: "frameworks", label: "Frameworks & Libraries" },
+                  { key: "outils", label: "Outils" },
+                  { key: "methodologies", label: "Méthodologies" },
+                ];
+
+                return (
+                  <div
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: 16,
+                    }}
+                  >
+                    {categories.map(({ key, label }) => {
+                      const items: string[] = draft.skills[key] || [];
+                      return (
+                        <div key={key}>
+                          <div
+                            style={{
+                              fontSize: 12,
+                              fontWeight: 600,
+                              marginBottom: 8,
+                              color: "var(--text)",
+                            }}
+                          >
+                            {label}
+                          </div>
+
+                          {/* Chips existants */}
+                          <div
+                            style={{
+                              display: "flex",
+                              flexWrap: "wrap",
+                              gap: 6,
+                              marginBottom: 8,
+                            }}
+                          >
+                            {items.length === 0 && (
+                              <span
+                                style={{
+                                  fontSize: 12,
+                                  color: "var(--text-muted)",
+                                  fontStyle: "italic",
+                                }}
+                              >
+                                Aucune compétence. Ajoutez-en ci-dessous.
+                              </span>
+                            )}
+                            {items.map((s, i) => (
+                              <span
+                                key={`${key}-${s}-${i}`}
+                                style={{
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  gap: 4,
+                                  background: "var(--primary-soft)",
+                                  color: "var(--primary)",
+                                  padding: "4px 10px",
+                                  borderRadius: 999,
+                                  fontSize: 12,
+                                  border: "1px solid #c7d2fe",
+                                }}
+                              >
+                                {s}
+                                {!isLocked && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const next = items.filter(
+                                        (_, idx) => idx !== i,
+                                      );
+                                      setField(`skills.${key}`, next);
+                                    }}
+                                    style={{
+                                      background: "none",
+                                      border: "none",
+                                      color: "var(--primary)",
+                                      cursor: "pointer",
+                                      padding: 0,
+                                      fontSize: 13,
+                                      lineHeight: 1,
+                                    }}
+                                    aria-label="Supprimer"
+                                  >
+                                    ×
+                                  </button>
+                                )}
+                              </span>
+                            ))}
+                          </div>
+
+                          {/* Zone d'ajout */}
+                          {!isLocked && (
+                            <div style={{ display: "flex", gap: 6 }}>
+                              <input
+                                type="text"
+                                className="input"
+                                placeholder={`Ajouter à ${label.toLowerCase()}...`}
+                                style={{ flex: 1, fontSize: 12 }}
+                                onKeyDown={(e) => {
+                                  if (e.key === "Enter") {
+                                    e.preventDefault();
+                                    const input = e.currentTarget;
+                                    const value = input.value.trim();
+                                    if (value && !items.includes(value)) {
+                                      setField(`skills.${key}`, [
+                                        ...items,
+                                        value,
+                                      ]);
+                                      input.value = "";
+                                    }
+                                  }
+                                }}
+                              />
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  const input = e.currentTarget
+                                    .previousElementSibling as HTMLInputElement;
+                                  const value = input.value.trim();
+                                  if (value && !items.includes(value)) {
+                                    setField(`skills.${key}`, [
+                                      ...items,
+                                      value,
+                                    ]);
+                                    input.value = "";
+                                  }
+                                }}
+                                style={{
+                                  background: "var(--primary)",
+                                  color: "#fff",
+                                  border: "none",
+                                  padding: "0 12px",
+                                  borderRadius: 6,
+                                  fontSize: 12,
+                                  fontWeight: 600,
+                                  cursor: "pointer",
+                                  display: "flex",
+                                  alignItems: "center",
+                                  gap: 4,
+                                }}
+                              >
+                                <Plus size={12} /> Ajouter
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              }
+
+              // Fallback : format tableau simple
               const currentSkills: string[] = Array.isArray(draft.skills)
                 ? draft.skills
-                : draft.skills && typeof draft.skills === "object"
-                  ? (Object.values(draft.skills).flat() as string[])
-                  : [];
-
+                : [];
               return (
                 <>
                   <div
@@ -221,17 +463,6 @@ export const CVVersionEditor = ({ versionId, onClose }: Props) => {
                       marginBottom: 12,
                     }}
                   >
-                    {currentSkills.length === 0 && (
-                      <span
-                        style={{
-                          fontSize: 13,
-                          color: "var(--text-muted)",
-                          fontStyle: "italic",
-                        }}
-                      >
-                        Aucune compétence. Ajoutez-en ci-dessous.
-                      </span>
-                    )}
                     {currentSkills.map((skill, i) => (
                       <span
                         key={`${skill}-${i}`}
@@ -244,7 +475,6 @@ export const CVVersionEditor = ({ versionId, onClose }: Props) => {
                           padding: "6px 12px",
                           borderRadius: 999,
                           fontSize: 13,
-                          fontWeight: 500,
                           border: "1px solid #c7d2fe",
                         }}
                       >
@@ -263,11 +493,8 @@ export const CVVersionEditor = ({ versionId, onClose }: Props) => {
                               color: "var(--primary)",
                               cursor: "pointer",
                               padding: 0,
-                              display: "flex",
                               fontSize: 14,
-                              lineHeight: 1,
                             }}
-                            aria-label="Supprimer"
                           >
                             ×
                           </button>
@@ -275,13 +502,12 @@ export const CVVersionEditor = ({ versionId, onClose }: Props) => {
                       </span>
                     ))}
                   </div>
-
                   {!isLocked && (
                     <div style={{ display: "flex", gap: 8 }}>
                       <input
                         type="text"
                         className="input"
-                        placeholder="Ajouter une compétence (ex: React)"
+                        placeholder="Ajouter une compétence"
                         value={newSkill}
                         onChange={(e) => setNewSkill(e.target.value)}
                         onKeyDown={(e) => {
@@ -327,6 +553,7 @@ export const CVVersionEditor = ({ versionId, onClose }: Props) => {
               );
             })()}
           </section>
+
           <section className="cvversion-editor__section">
             <div
               className="cvversion-editor__section-title"
@@ -404,6 +631,7 @@ export const CVVersionEditor = ({ versionId, onClose }: Props) => {
                       setField("experiences", n);
                     }}
                     disabled={isLocked}
+                    placeholder="Ex: Nov 2024 – Avr 2025"
                   />
                 </div>
                 <div className="cvversion-editor__field">
@@ -420,14 +648,7 @@ export const CVVersionEditor = ({ versionId, onClose }: Props) => {
                   />
                 </div>
                 <div className="cvversion-editor__field">
-                  <label
-                    style={{ display: "flex", justifyContent: "space-between" }}
-                  >
-                    <span>Missions (une par ligne)</span>
-                    <span style={{ fontSize: 10, color: "var(--text-muted)" }}>
-                      {(exp.missions || []).join("\n").length} car.
-                    </span>
-                  </label>
+                  <label>Missions (une par ligne)</label>
                   <textarea
                     value={(exp.missions || []).join("\n")}
                     onChange={(e) => {
@@ -440,7 +661,7 @@ export const CVVersionEditor = ({ versionId, onClose }: Props) => {
                       setField("experiences", n);
                     }}
                     disabled={isLocked}
-                    rows={5}
+                    rows={4}
                     style={{ fontFamily: "monospace", fontSize: 12 }}
                   />
                 </div>
@@ -461,6 +682,7 @@ export const CVVersionEditor = ({ versionId, onClose }: Props) => {
             ))}
           </section>
 
+          {/* PROJETS */}
           <section className="cvversion-editor__section">
             <div
               className="cvversion-editor__section-title"
@@ -554,7 +776,7 @@ export const CVVersionEditor = ({ versionId, onClose }: Props) => {
                       setField("projects", n);
                     }}
                     disabled={isLocked}
-                    rows={4}
+                    rows={3}
                     style={{ fontFamily: "monospace", fontSize: 12 }}
                   />
                 </div>
@@ -575,6 +797,7 @@ export const CVVersionEditor = ({ versionId, onClose }: Props) => {
             ))}
           </section>
 
+          {/* FORMATIONS */}
           <section className="cvversion-editor__section">
             <div
               className="cvversion-editor__section-title"
@@ -652,6 +875,7 @@ export const CVVersionEditor = ({ versionId, onClose }: Props) => {
                       setField("education", n);
                     }}
                     disabled={isLocked}
+                    placeholder="Ex: Sept 2020 – Juil 2021"
                   />
                 </div>
                 <div className="cvversion-editor__field">
@@ -668,7 +892,7 @@ export const CVVersionEditor = ({ versionId, onClose }: Props) => {
                       setField("education", n);
                     }}
                     disabled={isLocked}
-                    rows={3}
+                    rows={2}
                     style={{ fontFamily: "monospace", fontSize: 12 }}
                   />
                 </div>
@@ -678,7 +902,6 @@ export const CVVersionEditor = ({ versionId, onClose }: Props) => {
 
           <section className="cvversion-editor__section">
             <div className="cvversion-editor__section-title">Langues</div>
-
             {(() => {
               const currentLangs: { language: string; level: string | null }[] =
                 Array.isArray(draft.languages)
@@ -694,7 +917,7 @@ export const CVVersionEditor = ({ versionId, onClose }: Props) => {
                     ? draft.languages.split(/[|,]/).map((s: string) => {
                         const [language, level] = s
                           .split(":")
-                          .map((x) => x.trim());
+                          .map((x: string) => x.trim());
                         return {
                           language: language || "",
                           level: level || null,
@@ -757,11 +980,9 @@ export const CVVersionEditor = ({ versionId, onClose }: Props) => {
                               color: "#365314",
                               cursor: "pointer",
                               padding: 0,
-                              display: "flex",
                               fontSize: 14,
                               lineHeight: 1,
                             }}
-                            aria-label="Supprimer"
                           >
                             ×
                           </button>
@@ -800,11 +1021,13 @@ export const CVVersionEditor = ({ versionId, onClose }: Props) => {
                         onClick={() => {
                           const name = newLangName.trim();
                           if (!name) return;
-                          const exists = currentLangs.some(
-                            (l) =>
-                              l.language.toLowerCase() === name.toLowerCase(),
-                          );
-                          if (exists) return;
+                          if (
+                            currentLangs.some(
+                              (l) =>
+                                l.language.toLowerCase() === name.toLowerCase(),
+                            )
+                          )
+                            return;
                           setField("languages", [
                             ...currentLangs,
                             { language: name, level: newLangLevel || null },
@@ -863,6 +1086,96 @@ export const CVVersionEditor = ({ versionId, onClose }: Props) => {
           )}
         </div>
       </aside>
+
+      {gaps && (
+        <aside
+          onClick={(e) => e.stopPropagation()}
+          style={{
+            width: 340,
+            height: "100vh",
+            overflowY: "auto",
+            padding: 20,
+            background: "var(--bg)",
+            borderLeft: "1px solid var(--border)",
+            flexShrink: 0,
+          }}
+        >
+          <h2
+            style={{
+              fontSize: 18,
+              fontWeight: 700,
+              marginBottom: 16,
+              fontFamily: "var(--font-display)",
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+            }}
+          >
+            🎯 Pour ce poste
+          </h2>
+          <CVVersionGaps
+            gaps={gaps}
+            isLocked={isLocked}
+            onAddSkill={(skill) => {
+              // Détecte la catégorie selon le type de compétence
+              const categorize = (s: string): string => {
+                const lower = s.toLowerCase();
+                if (
+                  /^(javascript|python|java|php|sql|html|css|typescript|c\+\+|c#|ruby|go|rust|swift|kotlin)/i.test(
+                    lower,
+                  )
+                )
+                  return "langages";
+                if (
+                  /^(react|vue|angular|express|laravel|django|flask|spring|next|nuxt|svelte|tailwind|bootstrap|redux|zustand)/i.test(
+                    lower,
+                  )
+                )
+                  return "frameworks";
+                if (
+                  /^(git|docker|kubernetes|postman|vs code|figma|jira|mongodb|postgres|mysql|aws|azure|gcp)/i.test(
+                    lower,
+                  )
+                )
+                  return "outils";
+                return "methodologies";
+              };
+
+              const category = categorize(skill);
+
+              if (
+                draft.skills &&
+                typeof draft.skills === "object" &&
+                !Array.isArray(draft.skills)
+              ) {
+                const current = draft.skills[category] || [];
+                if (
+                  current.some(
+                    (c: string) => c.toLowerCase() === skill.toLowerCase(),
+                  )
+                ) {
+                  addToast("info", `"${skill}" est déjà dans votre CV.`);
+                  return;
+                }
+                setField(`skills.${category}`, [...current, skill]);
+              } else {
+                const current = Array.isArray(draft.skills) ? draft.skills : [];
+                if (
+                  current.some(
+                    (c: string) => c.toLowerCase() === skill.toLowerCase(),
+                  )
+                ) {
+                  addToast("info", `"${skill}" est déjà dans votre CV.`);
+                  return;
+                }
+                setField("skills", [...current, skill]);
+              }
+
+              addToast("success", `"${skill}" ajouté à votre CV !`);
+            }}
+          />
+        </aside>
+      )}
     </div>
   );
 };

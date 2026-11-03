@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { api, extractError } from "../services/api";
-import type { ApiResponse, CVVersion, CVVersionContent } from "../types";
+import type { ApiResponse, CVGap, CVVersion, CVVersionContent } from "../types";
 import { useToastStore } from "../store/toastStore";
 
 export const cvVersionKeys = {
@@ -29,6 +29,18 @@ export function useCVVersion(id: number | null) {
       return data.data;
     },
     enabled: !!id,
+  });
+}
+export function useCVGaps(versionId: number | null) {
+  return useQuery({
+    queryKey: ["cv-versions", versionId, "gaps"],
+    queryFn: async () => {
+      const { data } = await api.get<ApiResponse<CVGap>>(
+        `/cv-versions/${versionId}/gaps`,
+      );
+      return data.data;
+    },
+    enabled: !!versionId,
   });
 }
 
