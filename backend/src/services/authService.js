@@ -46,4 +46,35 @@ export const authService = {
     }
     return buildAuthPayload(user);
   },
+  async updateProfile(userId, name) {
+    const user = await User.findByPk(userId);
+    if (!user)
+      throw Object.assign(new Error("Utilisateur introuvable"), {
+        status: 404,
+      });
+    await user.update({ name });
+    return {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      preferredLanguage: user.preferredLanguage,
+    };
+  },
+
+  async changePassword(userId, currentPassword, newPassword) {
+    const user = await User.findByPk(userId);
+    if (!user)
+      throw Object.assign(new Error("Utilisateur introuvable"), {
+        status: 404,
+      });
+
+    const valid = await bcrypt.compare(currentPassword, user.passwordHash);
+    if (!valid)
+      throw Object.assign(new Error("Mot de passe actuel incorrect"), {
+        status: 401,
+      });
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+    await user.update({ passwordHash });
+  },
 };

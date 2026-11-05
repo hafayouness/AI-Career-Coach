@@ -10,5 +10,9 @@ router.get("/me", requireAuth, authController.me);
 router.post("/logout", (_req, res) =>
   res.json({ success: true, data: {}, message: "Déconnecté" }),
 );
+router.patch("/profile", requireAuth, authController.updateProfile);
+router.patch("/password", requireAuth, authController.changePassword);
+router.post("/forgot-password", authController.forgotPassword);
+router.post("/reset-password", authController.resetPassword);
 
 export default router;

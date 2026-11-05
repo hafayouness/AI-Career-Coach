@@ -150,4 +150,246 @@ export const cvVersionService = {
     const version = await this.get(userId, id);
     await version.destroy();
   },
+  async getGaps(userId, versionId) {
+    const version = await this.get(userId, versionId);
+
+    // Récupérer le CV original et l'offre
+    const cv = await CV.findOne({ where: { id: version.cvId, userId } });
+    const offer = await JobOffer.findOne({
+      where: { id: version.jobOfferId, userId },
+    });
+
+    if (!cv || !offer)
+      throw Object.assign(new Error("Données introuvables"), { status: 404 });
+
+    const cvData = cv.parsedData || {};
+    const requirements = offer.requirements || {};
+    const requiredSkills = requirements.requiredSkills || [];
+    const preferredSkills = requirements.preferredSkills || [];
+    const requiredExp = requirements.requiredExperience || "";
+    const requiredEdu = requirements.requiredEducation || "";
+
+    // Normalisation des compétences du CV
+    let cvSkills = [];
+    if (Array.isArray(cvData.skills)) {
+      cvSkills = cvData.skills;
+    } else if (cvData.skills && typeof cvData.skills === "object") {
+      cvSkills = Object.values(cvData.skills).flat();
+    }
+
+    // Matching simple (insensible à la casse)
+    const normalize = (s) => (s || "").toLowerCase().trim();
+    const cvSkillsLower = cvSkills.map(normalize);
+
+    const matchedSkills = requiredSkills.filter((s) =>
+      cvSkillsLower.some(
+        (cs) => cs.includes(normalize(s)) || normalize(s).includes(cs),
+      ),
+    );
+
+    const missingSkills = requiredSkills.filter(
+      (s) =>
+        !cvSkillsLower.some(
+          (cs) => cs.includes(normalize(s)) || normalize(s).includes(cs),
+        ),
+    );
+
+    const matchedPreferred = preferredSkills.filter((s) =>
+      cvSkillsLower.some(
+        (cs) => cs.includes(normalize(s)) || normalize(s).includes(cs),
+      ),
+    );
+
+    const missingPreferred = preferredSkills.filter(
+      (s) =>
+        !cvSkillsLower.some(
+          (cs) => cs.includes(normalize(s)) || normalize(s).includes(cs),
+        ),
+    );
+
+    // Analyse des expériences
+    const cvExperiences = cvData.experiences || [];
+    const totalExperienceYears = cvExperiences.reduce((acc, exp) => {
+      const start = exp.startDate
+        ? parseInt(exp.startDate.match(/\d{4}/)?.[0] || "0")
+        : 0;
+      const end = exp.endDate
+        ? parseInt(exp.endDate.match(/\d{4}/)?.[0] || "0")
+        : new Date().getFullYear();
+      return acc + (end - start);
+    }, 0);
+
+    // Analyse de la formation
+    const cvEducation = cvData.education || [];
+    const hasEducation = cvEducation.length > 0;
+
+    return {
+      skills: {
+        matched: matchedSkills,
+        missing: missingSkills,
+        matchedPreferred,
+        missingPreferred,
+      },
+      experience: {
+        totalYears: totalExperienceYears,
+        required: requiredExp,
+        sufficient: requiredExp
+          ? totalExperienceYears >=
+            parseInt(requiredExp.match(/\d+/)?.[0] || "0")
+          : true,
+      },
+      education: {
+        has: hasEducation,
+        required: requiredEdu,
+        sufficient: requiredEdu ? hasEducation : true,
+      },
+      recommendations: [
+        ...missingSkills.map((s) => ({
+          type: "skill",
+          priority: "high",
+          message: `Ajoutez la compétence "${s}" dans votre CV si vous la maîtrisez.`,
+          suggestion: `Ex: "Maîtrise de ${s} acquise lors de..."`,
+        })),
+        ...missingPreferred.map((s) => ({
+          type: "skill",
+          priority: "medium",
+          message: `"${s}" est un plus pour ce poste. Mentionnez-la si possible.`,
+          suggestion: `Ex: "Notions de ${s}"`,
+        })),
+      ],
+    };
+  },
+  async createManual(userId, cvId, jobOfferId) {
+    const cv = await CV.findOne({ where: { id: cvId, userId } });
+    if (!cv) throw Object.assign(new Error("CV introuvable"), { status: 404 });
+
+    const lastVersion = await CVVersion.findOne({
+      where: { cvId, jobOfferId },
+      order: [["versionNumber", "DESC"]],
+    });
+    const versionNumber = lastVersion ? lastVersion.versionNumber + 1 : 1;
+
+    const parsed = cv.parsedData || {};
+
+    const normalizeSkills = (rawSkills) => {
+      const emptyCategories = {
+        langages: [],
+        frameworks: [],
+        outils: [],
+        methodologies: [],
+      };
+
+      if (!rawSkills) return emptyCategories;
+
+      if (typeof rawSkills === "object" && !Array.isArray(rawSkills)) {
+        return {
+          langages: Array.isArray(rawSkills.langages) ? rawSkills.langages : [],
+          frameworks: Array.isArray(rawSkills.frameworks)
+            ? rawSkills.frameworks
+            : [],
+          outils: Array.isArray(rawSkills.outils) ? rawSkills.outils : [],
+          methodologies: Array.isArray(rawSkills.methodologies)
+            ? rawSkills.methodologies
+            : [],
+        };
+      }
+
+      if (Array.isArray(rawSkills)) {
+        const categorized = { ...emptyCategories };
+        rawSkills.forEach((s) => {
+          const lower = s.toLowerCase();
+          if (
+            /^(javascript|python|java|php|sql|html|css|typescript|c\+\+|c#|ruby|go|rust|swift|kotlin)/i.test(
+              lower,
+            )
+          ) {
+            categorized.langages.push(s);
+          } else if (
+            /^(react|vue|angular|express|laravel|django|flask|spring|next|nuxt|svelte|tailwind|bootstrap|redux|zustand)/i.test(
+              lower,
+            )
+          ) {
+            categorized.frameworks.push(s);
+          } else if (
+            /^(git|docker|kubernetes|postman|vs code|figma|jira|mongodb|postgres|mysql|aws|azure|gcp)/i.test(
+              lower,
+            )
+          ) {
+            categorized.outils.push(s);
+          } else {
+            categorized.methodologies.push(s);
+          }
+        });
+        return categorized;
+      }
+
+      return emptyCategories;
+    };
+
+    const content = {
+      header: {
+        name: (parsed.name || "").replace(/^#+\s*/, ""),
+        email: parsed.email || "",
+        phone: parsed.phone || "",
+        github: parsed.github || "",
+        linkedin: parsed.linkedin || "",
+        portfolio: parsed.portfolio || "",
+        summary: parsed.summary || "",
+      },
+      skills: normalizeSkills(parsed.skills),
+      experiences: Array.isArray(parsed.experiences)
+        ? parsed.experiences.map((e) => ({
+            title_and_company:
+              [e.title, e.company].filter(Boolean).join(" : ") || "",
+            dates: [e.startDate, e.endDate].filter(Boolean).join(" – ") || "",
+            context: "",
+            missions: e.description ? [e.description] : [],
+            result: "",
+          }))
+        : [],
+      education: Array.isArray(parsed.education)
+        ? parsed.education.map((e) => ({
+            title: [e.degree, e.institution].filter(Boolean).join(" – ") || "",
+            dates:
+              e.startDate && e.endDate
+                ? `${e.startDate} – ${e.endDate}`
+                : e.year || "",
+            details: [],
+          }))
+        : [],
+      languages: Array.isArray(parsed.languages)
+        ? parsed.languages.map((l) =>
+            typeof l === "string"
+              ? { language: l, level: null }
+              : { language: l.language || "", level: l.level || null },
+          )
+        : [],
+      certifications: Array.isArray(parsed.certifications)
+        ? parsed.certifications
+        : [],
+      projects: Array.isArray(parsed.projects)
+        ? parsed.projects.map((p) => ({
+            name: p.name || "",
+            dates: "",
+            missions: p.description ? [p.description] : [],
+            result: "",
+          }))
+        : [],
+    };
+
+    return CVVersion.create({
+      cvId,
+      jobOfferId,
+      versionNumber,
+      content,
+      changeSummary: {
+        reorganized: ["Création manuelle"],
+        reformulated: [],
+        highlighted: [],
+        flaggedClaims: [],
+        antiInventionIssues: [],
+      },
+      validated: false,
+    });
+  },
 };

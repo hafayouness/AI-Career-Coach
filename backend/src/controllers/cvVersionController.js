@@ -113,4 +113,34 @@ export const cvVersionController = {
       next(e);
     }
   },
+  async createManual(req, res, next) {
+    try {
+      const { cvId, jobOfferId } = z
+        .object({
+          cvId: z.number().int().positive(),
+          jobOfferId: z.number().int().positive(),
+        })
+        .parse(req.body);
+
+      const version = await cvVersionService.createManual(
+        req.user.id,
+        cvId,
+        jobOfferId,
+      );
+      return created(res, version, "CV adapté créé manuellement");
+    } catch (e) {
+      next(e);
+    }
+  },
+  async getGaps(req, res, next) {
+    try {
+      const gaps = await cvVersionService.getGaps(
+        req.user.id,
+        Number(req.params.id),
+      );
+      return ok(res, gaps);
+    } catch (e) {
+      next(e);
+    }
+  },
 };

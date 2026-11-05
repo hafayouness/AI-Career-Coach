@@ -15,7 +15,12 @@ User.init(
     },
     passwordHash: { type: DataTypes.STRING(255), allowNull: false },
     preferredLanguage: { type: DataTypes.STRING(5), defaultValue: "fr" },
+    resetToken: { type: DataTypes.STRING, allowNull: true },
+    resetTokenExpiry: { type: DataTypes.DATE, allowNull: true },
+    resetCode: { type: DataTypes.STRING(6), allowNull: true },
+    resetCodeExpiry: { type: DataTypes.DATE, allowNull: true },
   },
+
   {
     sequelize,
     tableName: "users",

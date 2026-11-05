@@ -13,5 +13,7 @@ router.patch("/:id", cvVersionController.update);
 router.post("/:id/validate", cvVersionController.validate);
 router.delete("/:id", cvVersionController.remove);
 router.get("/:id/pdf", cvVersionController.downloadPDF);
+router.post("/manual", cvVersionController.createManual);
+router.get("/:id/gaps", cvVersionController.getGaps);
 
 export default router;

@@ -8,6 +8,7 @@ import presentationRoutes from "./presentationRoutes.js";
 import interviewQuestionRoutes from "./interviewQuestionroutes.js";
 import interviewSimulationRoutes from "./interviewSimulationRoutes.js";
 import applicationRoutes from "./applicationRoutes.js";
+import dashboardRoutes from "./dashboardRoutes.js";
 
 const router = Router();
 
@@ -20,5 +21,6 @@ router.use("/presentations", presentationRoutes);
 router.use("/interview-questions", interviewQuestionRoutes);
 router.use("/interview-sessions", interviewSimulationRoutes);
 router.use("/applications", applicationRoutes);
+router.use("/dashboard", dashboardRoutes);
 
 export default router;
