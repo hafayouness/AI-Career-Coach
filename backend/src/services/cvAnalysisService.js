@@ -14,6 +14,9 @@ FORMAT STRICT :
   "name": string|null,
   "email": string|null,
   "phone": string|null,
+  "github": string|null,
+  "linkedin": string|null,
+  "portfolio": string|null,
   "summary": string|null,
   "skills": string[],
   "experiences": [
@@ -57,6 +60,9 @@ export const cvAnalysisService = {
       name: str(data.name),
       email: str(data.email),
       phone: str(data.phone),
+      github: str(data.github),
+      linkedin: str(data.linkedin),
+      portfolio: str(data.portfolio),
       summary: str(data.summary),
       skills: arr(data.skills).filter((s) => typeof s === "string"),
       experiences: arr(data.experiences).map((e) => ({

@@ -141,7 +141,6 @@ Génère le CV adapté en respectant EXACTEMENT la structure demandée. Rends le
 
     const validated = this.validate(raw);
 
-    // Tri automatique
     if (validated.content.skills) {
       validated.content.skills.langages = sortSkillsByRelevance(
         validated.content.skills.langages || [],
@@ -184,9 +183,12 @@ Génère le CV adapté en respectant EXACTEMENT la structure demandée. Rends le
     return {
       content: {
         header: {
-          name: str(header.name) || "CV adapté",
+          name: (str(header.name) || "CV adapté").replace(/^#+\s*/, "").trim(),
           email: strOrNull(header.email),
           phone: strOrNull(header.phone),
+          github: strOrNull(header.github),
+          linkedin: strOrNull(header.linkedin),
+          portfolio: strOrNull(header.portfolio),
           summary: str(header.summary),
         },
         skills: {
