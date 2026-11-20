@@ -16,6 +16,8 @@ import { InterviewSimulationPage } from "./pages/InterviewSimulationPage";
 import { ApplicationsPage } from "./pages/ApplicationsPage";
 import { SettingsPage } from "./pages/SettingsPage";
 import { ToastContainer } from "./components/ui/ToastContainer";
+import { ForgotPassword } from "./pages/ForgotPassword";
+import { ResetPassword } from "./pages/ResetPassword";
 const PublicRoute = ({ children }: { children: React.ReactNode }) => {
   const token = useAuthStore((s) => s.token);
   if (token) return <Navigate to="/dashboard" replace />;
@@ -73,6 +75,22 @@ export const App = () => (
 
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="*" element={<NotFound />} />
+      <Route
+        path="/forgot-password"
+        element={
+          <PublicRoute>
+            <ForgotPassword />
+          </PublicRoute>
+        }
+      />
+      <Route
+        path="/reset-password"
+        element={
+          <PublicRoute>
+            <ResetPassword />
+          </PublicRoute>
+        }
+      />
     </Routes>
     <ToastContainer />
   </BrowserRouter>

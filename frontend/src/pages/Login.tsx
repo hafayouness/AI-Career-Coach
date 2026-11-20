@@ -105,9 +105,9 @@ export const Login = () => {
               <label className="auth__checkbox">
                 <input type="checkbox" /> Se souvenir de moi
               </label>
-              <a href="#" className="auth__link-sm">
+              <Link to="/forgot-password" className="auth__link-sm">
                 Mot de passe oublié ?
-              </a>
+              </Link>
             </div>
 
             <Button type="submit" loading={login.isPending} full>
